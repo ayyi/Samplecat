@@ -1,14 +1,15 @@
-/**
-* +----------------------------------------------------------------------+
-* | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
-* | copyright (C) 2007-2020 Tim Orford <tim@orford.org>                  |
-* +----------------------------------------------------------------------+
-* | This program is free software; you can redistribute it and/or modify |
-* | it under the terms of the GNU General Public License version 3       |
-* | as published by the Free Software Foundation.                        |
-* +----------------------------------------------------------------------+
-*
-*/
+/*
+ +----------------------------------------------------------------------+
+ | This file is part of Samplecat. https://ayyi.github.io/samplecat/    |
+ | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
+ +----------------------------------------------------------------------+
+ | This program is free software; you can redistribute it and/or modify |
+ | it under the terms of the GNU General Public License version 3       |
+ | as published by the Free Software Foundation.                        |
+ +----------------------------------------------------------------------+
+ |
+ */
+
 #include "config.h"
 #include "debug/debug.h"
 #include "samplecat/sample.h"
@@ -31,11 +32,10 @@ enum  {
 static guint player_signals[PLAYER_NUM_SIGNALS] = {0};
 
 
-Player*
+static Player*
 player_construct (GType object_type)
 {
-	Player* self = (Player*) g_object_new (object_type, NULL);
-	return self;
+	return (Player*) g_object_new (object_type, NULL);
 }
 
 
@@ -50,9 +50,7 @@ static GObject*
 player_constructor (GType type, guint n_construct_properties, GObjectConstructParam* construct_properties)
 {
 	GObjectClass* parent_class = G_OBJECT_CLASS (player_parent_class);
-	GObject* obj = parent_class->constructor (type, n_construct_properties, construct_properties);
-
-	return obj;
+	return parent_class->constructor (type, n_construct_properties, construct_properties);
 }
 
 

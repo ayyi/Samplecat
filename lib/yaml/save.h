@@ -17,6 +17,7 @@
 #if __has_include ("agl/typedefs.h")
 #include "agl/typedefs.h"
 #endif
+#include "debug/debug.h"
 
 #define PLAIN_IMPLICIT true
 

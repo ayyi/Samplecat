@@ -3,11 +3,6 @@
 VALA_DIR =
 SUBDIRS = panels $(VALA_DIR)
 
-if !ENABLE_SYSTEM_GTKGLEXT
-LOCAL_GTKGLEXT_CFLAGS = \
-	-I$(top_srcdir)/lib/waveform/gtkglext-1.0
-endif
-
 AM_CFLAGS = \
 	-O2 \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
@@ -19,7 +14,6 @@ AM_CFLAGS = \
 	-I$(top_srcdir)/lib/file_manager \
 	-I$(top_srcdir)/lib/waveform \
 	-I$(top_srcdir)/lib/waveform/lib/agl \
-	$(LOCAL_GTKGLEXT_CFLAGS) \
 	-I./panels \
 	-I./dir_tree \
 	$(SAMPLECAT_CFLAGS) \
@@ -49,21 +43,15 @@ if ENABLE_OPENGL
 if ENABLE_FFTW3
 OPENGL_FFTW_SRC = gl_spectrogram_view.c gl_spectrogram_view.h
 endif
-if ENABLE_SYSTEM_GTKGLEXT
-else
-GTKGLEXT_LDFLAGS = \
-	$(top_srcdir)/lib/waveform/gtkglext-1.0/.libs/libgtkglext.a
-endif
 OPENGL_SRC = \
 	$(OPENGL_FFTW_SRC) \
 	rotator.c rotator.h
 OPENGL_LDFLAGS = \
-	$(GTKGLEXT_LDFLAGS) \
 	$(GL_LDFLAGS)
 endif
 
 if ENABLE_GDL
-GDL_LDFLAGS = $(top_srcdir)/lib/gdl/libgdl.a $(XML_LIBS)
+GDL_LDFLAGS = $(top_srcdir)/lib/gdl/.libs/libgdl-4.a $(XML_LIBS)
 endif
 
 if ENABLE_YAML
@@ -77,28 +65,23 @@ samplecat_SOURCES = \
 	main.c \
 	resources.c \
 	application.c application.h \
+	application-nogui.c application-nogui.h \
 	window.c window.h \
 	progress_dialog.c progress_dialog.h \
 	dh_tree.c dh_tree.h \
-	cellrenderer_hypertext.c cellrenderer_hypertext.h \
 	colour_box.c colour_box.h \
 	dnd.c dnd.h \
 	support.c support.h \
-	console_view.c console_view.h \
-	icon_theme.c icon_theme.h \
-	table.c table.h \
-	editablelabelbutton.c editablelabelbutton.h \
-	$(AUDIOANALYSERS_SRC) \
 	$(FFT_SRC) \
 	$(OPENGL_SRC) \
 	$(AYYI_SRC)
 
 samplecat_LDADD = \
-	$(top_srcdir)/lib/file_manager/libfilemanager.a \
 	$(top_srcdir)/lib/dir_tree/libdirtree.a \
 	$(top_srcdir)/lib/debug/libdebug.a \
 	$(top_srcdir)/lib/samplecat/.libs/libsamplecat.a \
 	$(top_srcdir)/lib/samplecat/db/libsamplecatdb.a \
+	$(top_srcdir)/lib/file_manager/libfilemanager.a \
 	$(GDL_LDFLAGS) \
 	$(top_srcdir)/lib/utils/libutils.a \
 	$(top_srcdir)/lib/gtk/libgtk.la \
@@ -110,6 +93,7 @@ samplecat_LDADD = \
 	$(top_srcdir)/lib/waveform/.libs/libwaveformcore.a \
 	$(top_srcdir)/lib/waveform/.libs/libwaveformui.a \
 	$(top_srcdir)/lib/waveform/lib/agl/.libs/libagl.a \
+	$(top_srcdir)/lib/gtk/.libs/libgtk.a \
 	$(TRACKER_LIBS) \
 	$(SQLITE_LIBS) \
 	$(MYSQL_LDFLAGS) \
@@ -119,7 +103,7 @@ samplecat_LDADD = \
 	$(GTHREAD_LIBS) \
 	$(FFTW3_LIBS) \
 	$(OPENGL_LDFLAGS) \
-	$(GTK_LIBS) \
+	$(GTK_LDFLAGS) \
 	$(LIBASS_LDFLAGS) \
 	$(ZLIB_LIBS) \
 	$(GMODULE_LIBS) \

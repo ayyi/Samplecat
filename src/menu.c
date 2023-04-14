@@ -1,23 +1,32 @@
-/**
-* +----------------------------------------------------------------------+
-* | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
-* | copyright (C) 2007-2020 Tim Orford <tim@orford.org>                  |
-* +----------------------------------------------------------------------+
-* | This program is free software; you can redistribute it and/or modify |
-* | it under the terms of the GNU General Public License version 3       |
-* | as published by the Free Software Foundation.                        |
-* +----------------------------------------------------------------------+
-*
-*/
+/*
+ +----------------------------------------------------------------------+
+ | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
+ | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
+ +----------------------------------------------------------------------+
+ | This program is free software; you can redistribute it and/or modify |
+ | it under the terms of the GNU General Public License version 3       |
+ | as published by the Free Software Foundation.                        |
+ +----------------------------------------------------------------------+
+ |
+ */
 
+#ifdef GTK4_TODO
 static void menu__add_to_db      (GtkMenuItem*, gpointer);
 static void menu__add_dir_to_db  (GtkMenuItem*, gpointer);
 static void menu__play           (GtkMenuItem*, gpointer);
+#endif
 
 
 static GtkWidget*
-make_context_menu ()
+make_context_menu (GtkWidget* widget)
 {
+	GMenuModel* model = (GMenuModel*)g_menu_new ();
+
+	GtkWidget* menu = gtk_popover_menu_new_from_model (model);
+	gtk_widget_set_parent (menu, widget);
+	gtk_popover_set_has_arrow (GTK_POPOVER(menu), false);
+
+#ifdef GTK4_TODO
 	void menu_delete_row (GtkMenuItem* widget, gpointer user_data)
 	{
 		delete_selected_rows();
@@ -313,10 +322,12 @@ make_context_menu ()
 
 	gtk_widget_show_all(menu);
 	g_list_free(menu_items);
+#endif
 	return menu;
 }
 
 
+#ifdef GTK4_TODO
 static void
 menu__add_to_db (GtkMenuItem* menuitem, gpointer user_data)
 {
@@ -370,5 +381,4 @@ menu__play (GtkMenuItem* menuitem, gpointer user_data)
 	}
 	g_list_free(selected);
 }
-
-
+#endif

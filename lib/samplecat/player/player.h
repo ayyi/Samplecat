@@ -1,16 +1,16 @@
-/**
-* +----------------------------------------------------------------------+
-* | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
-* | copyright (C) 2007-2019 Tim Orford <tim@orford.org>                  |
-* +----------------------------------------------------------------------+
-* | This program is free software; you can redistribute it and/or modify |
-* | it under the terms of the GNU General Public License version 3       |
-* | as published by the Free Software Foundation.                        |
-* +----------------------------------------------------------------------+
-*
-*/
-#ifndef __player_h__
-#define __player_h__
+/*
+ +----------------------------------------------------------------------+
+ | This file is part of Samplecat. https://ayyi.github.io/samplecat/    |
+ | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
+ +----------------------------------------------------------------------+
+ | This program is free software; you can redistribute it and/or modify |
+ | it under the terms of the GNU General Public License version 3       |
+ | as published by the Free Software Foundation.                        |
+ +----------------------------------------------------------------------+
+ |
+ */
+
+#pragma once
 
 #include <stdbool.h>
 #include <glib-object.h>
@@ -42,12 +42,12 @@ typedef enum {
 
 G_BEGIN_DECLS
 
-#define TYPE_PLAYER (player_get_type ())
-#define PLAYER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_PLAYER, Player))
-#define PLAYER_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), TYPE_PLAYER, PlayerClass))
-#define IS_PLAYER(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_PLAYER))
+#define TYPE_PLAYER            (player_get_type ())
+#define PLAYER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_PLAYER, Player))
+#define PLAYER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), TYPE_PLAYER, PlayerClass))
+#define IS_PLAYER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_PLAYER))
 #define IS_PLAYER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TYPE_PLAYER))
-#define PLAYER_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), TYPE_PLAYER, PlayerClass))
+#define PLAYER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TYPE_PLAYER, PlayerClass))
 
 typedef struct _PlayerClass PlayerClass;
 typedef struct _PlayerPrivate PlayerPrivate;
@@ -89,7 +89,6 @@ typedef struct {
 
 GType   player_get_type             () G_GNUC_CONST;
 Player* player_new                  ();
-Player* player_construct            (GType);
 void    player_connect              (ErrorCallback, gpointer);
 bool    player_play                 (Sample*);
 void    player_stop                 ();
@@ -103,5 +102,3 @@ bool    player_is_playing           ();
 G_END_DECLS
 
 extern Player* play;
-
-#endif

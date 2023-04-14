@@ -1,23 +1,22 @@
-/**
-* +----------------------------------------------------------------------+
-* | This file is part of Samplecat. http://samplecat.orford.org          |
-* | copyright (C) 2007-2020 Tim Orford <tim@orford.org>                  |
-* +----------------------------------------------------------------------+
-* | This program is free software; you can redistribute it and/or modify |
-* | it under the terms of the GNU General Public License version 3       |
-* | as published by the Free Software Foundation.                        |
-* +----------------------------------------------------------------------+
-*
-*/
+/*
+ +----------------------------------------------------------------------+
+ | This file is part of Samplecat. http://samplecat.orford.org          |
+ | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
+ +----------------------------------------------------------------------+
+ | This program is free software; you can redistribute it and/or modify |
+ | it under the terms of the GNU General Public License version 3       |
+ | as published by the Free Software Foundation.                        |
+ +----------------------------------------------------------------------+
+ |
+ */
+
 #include "config.h"
 #include <math.h>
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <gtk/gtk.h>
-#pragma GCC diagnostic warning "-Wdeprecated-declarations"
 #include "debug/debug.h"
 #include "gtk/menu.h"
 #include "file_manager.h"
-#include "typedefs.h"
+#include "types.h"
 #include "support.h"
 #include "application.h"
 #include "dnd.h"
@@ -28,24 +27,33 @@ typedef struct
 	GtkWidget* menu;
 } ColourBox;
 
+#ifdef GTK4_TODO
 static GtkWidget*  clicked_widget = NULL;
+#endif
 
 static void        colour_box_update               ();
-static void        colour_box__set_colour          (int, GdkColor*);
+static bool        colour_box_add                  (uint32_t);
+#ifdef GTK4_TODO
+static void        colour_box__set_colour          (int, uint32_t);
 static gboolean    colour_box__on_event            (GtkWidget*, GdkEvent*, gpointer);
 static int         colour_box__drag_dataget        (GtkWidget*, GdkDragContext*, GtkSelectionData*, guint info, guint time, gpointer);
 static GtkWidget*  colour_box__make_context_menu   ();
 static int         colour_box__lookup_idx          (GtkWidget*);
+#endif
+#ifdef GTK4_TODO
 static void        menu__open_selector             (GtkMenuItem*, gpointer);
+#endif
 #if 0
 static gboolean    colour_box__exists              (GdkColor*);
 #endif
 
 ColourBox self = {NULL};
 
+#ifdef GTK4_TODO
 static MenuDef _menu_def[] = {
     {"Select Colour", G_CALLBACK(menu__open_selector), GTK_STOCK_SELECT_COLOR},
 };
+#endif
 
 GtkWidget* colour_button[PALETTE_SIZE];
 gboolean   colourbox_dirty;
@@ -54,7 +62,7 @@ gboolean   colourbox_dirty;
 void
 colour_box_init ()
 {
-	int i; for(i=0;i<PALETTE_SIZE;i++) colour_button[i] = NULL;
+	for (int i=0;i<PALETTE_SIZE;i++) colour_button[i] = NULL;
 	colourbox_dirty = true;
 }
 
@@ -62,28 +70,38 @@ colour_box_init ()
 GtkWidget*
 colour_box_new (GtkWidget* parent)
 {
-	GtkWidget* e;
-	for(int i=PALETTE_SIZE-1;i>=0;i--){
-		e = colour_button[i] = gtk_event_box_new();
-		//gtk_container_set_border_width(GTK_CONTAINER(e), 1);
+	GtkWidget* window = (GtkWidget*)gtk_application_get_active_window(GTK_APPLICATION(app));
 
+	GtkWidget* e;
+	for (int i=PALETTE_SIZE-1;i>=0;i--) {
+		e = colour_button[i] = gtk_color_button_new();
+
+#ifdef GTK4_TODO
 		gtk_drag_source_set(e, GDK_BUTTON1_MASK | GDK_BUTTON2_MASK, dnd_file_drag_types, dnd_file_drag_types_count, GDK_ACTION_COPY | GDK_ACTION_MOVE | GDK_ACTION_LINK);
 		g_signal_connect(G_OBJECT(e), "drag-data-get", G_CALLBACK(colour_box__drag_dataget), GUINT_TO_POINTER(i));
+#endif
 
+#ifdef GTK4_TODO
 #if 1 // do not allow to change 'neutral' colour.
 		if (i > 0)
 #endif
 		g_signal_connect(G_OBJECT(e), "event", G_CALLBACK(colour_box__on_event), GUINT_TO_POINTER(i));
+#endif
 
-		gtk_widget_set_no_show_all(e, true);
+#ifdef GTK4_TODO
+		gtk_widget_set_visible(e, false);
+#endif
 
-		gtk_box_pack_end(GTK_BOX(parent), e, true, true, 0);
+		gtk_box_prepend(GTK_BOX(parent), e);
 	}
-	if(!self.menu) self.menu = colour_box__make_context_menu();
+#ifdef GTK4_TODO
+	if (!self.menu) self.menu = colour_box__make_context_menu();
+#endif
 
 	void _on_theme_change (Application* a, char* t, gpointer _){ colour_box_update(); }
 	g_signal_connect((gpointer)app, "theme-changed", G_CALLBACK(_on_theme_change), NULL);
 
+#ifdef GTK4_TODO
 	void _config_loaded (Application* a, gpointer _)
 	{
 		for (int i=0;i<PALETTE_SIZE;i++) {
@@ -94,37 +112,43 @@ colour_box_new (GtkWidget* parent)
 		}
 	}
 	g_signal_connect((gpointer)app, "config-loaded", G_CALLBACK(_config_loaded), NULL);
+#endif
 
-	if(gtk_widget_get_realized(app->window))
+	if (gtk_widget_get_realized(window)) {
 		colour_box_update();
-	else{
+	} else {
 		void window_on_realise (GtkWidget* win, gpointer user_data)
 		{
 			colour_box_update();
 		}
-		g_signal_connect(G_OBJECT(app->window), "realize", G_CALLBACK(window_on_realise), NULL);
+		g_signal_connect(G_OBJECT(window), "realize", G_CALLBACK(window_on_realise), NULL);
 	}
 
+#ifdef GTK4_TODO
 	//TODO use theme-changed instead?
 	void window_on_allocate (GtkWidget* win, GtkAllocation* allocation, gpointer user_data)
 	{
-		if(colourbox_dirty){
+		if (colourbox_dirty) {
 			colour_box_colourise();
 			colourbox_dirty = false;
 		}
 	}
-	g_signal_connect(G_OBJECT(app->window), "size-allocate", G_CALLBACK(window_on_allocate), NULL);
+	g_signal_connect(G_OBJECT(window), "size-allocate", G_CALLBACK(window_on_allocate), NULL);
 
+#endif
 	gtk_widget_set_size_request(e, -1, 24);
 
 	return e;
 }
 
 
+/*
+ *  Show the current palette colours in the colour_box
+ */
 static void
 colour_box_update ()
 {
-	//show the current palette colours in the colour_box
+#ifdef GTK4_TODO
 	GdkColor colour;
 	char colour_string[16];
 	for(int i=PALETTE_SIZE-1;i>=0;i--){
@@ -144,6 +168,7 @@ colour_box_update ()
 		}
 		else gtk_widget_hide(widget);
 	}
+#endif
 }
 
 
@@ -155,12 +180,11 @@ colour_box__exists (GdkColor* colour)
 
 	GdkColor existing_colour;
 	char string[8];
-	int i;
-	for(i=0;i<PALETTE_SIZE;i++){
-		if(strlen(app->config.colour[i])){
+	for (int i=0;i<PALETTE_SIZE;i++) {
+		if (strlen(app->config.colour[i])) {
 			snprintf(string, 8, "#%s", app->config.colour[i]);
-			if(!gdk_color_parse(string, &existing_colour)) warnprintf("%s(): parsing of colour string failed (%s).\n", __func__, string);
-			if(is_similar(colour, &existing_colour, 0x10)) return true;
+			if (!gdk_color_parse(string, &existing_colour)) warnprintf("%s(): parsing of colour string failed (%s).\n", __func__, string);
+			if (is_similar(colour, &existing_colour, 0x10)) return true;
 		}
 	}
 
@@ -169,8 +193,8 @@ colour_box__exists (GdkColor* colour)
 #endif
 
 
-gboolean
-colour_box_add (GdkColor* colour)
+static bool
+colour_box_add (uint32_t colour)
 {
 	static unsigned slot = 0;
 
@@ -185,22 +209,27 @@ colour_box_add (GdkColor* colour)
 	//only add a colour if a similar colour isnt already there.
 	if(colour_box__exists(colour)){ dbg(2, "dup colour - not adding..."); return false; }
 #endif
-	hexstring_from_gdkcolor(app->config.colour[slot++], colour);
+#ifdef GTK4_TODO
+	app->config.colour[slot++] = colour;
+#endif
 
 	return true;
 }
 
 
+#ifdef GTK4_TODO
 static void
-colour_box__set_colour (int i, GdkColor* colour)
+colour_box__set_colour (int i, uint32_t colour)
 {
 	g_return_if_fail(i < PALETTE_SIZE);
 	g_return_if_fail(colour_button[i]);
 	hexstring_from_gdkcolor(app->config.colour[i], colour);
 	gtk_widget_modify_bg(colour_button[i], GTK_STATE_NORMAL, colour);
 }
+#endif
 
 
+#ifdef GTK4_TODO
 static gboolean
 colour_box__on_event (GtkWidget* widget, GdkEvent* event, gpointer user_data)
 {
@@ -208,10 +237,10 @@ colour_box__on_event (GtkWidget* widget, GdkEvent* event, gpointer user_data)
 		case GDK_BUTTON_PRESS:
 			dbg (1, "button=%i", event->button.type);
 			clicked_widget = widget;
-			if(event->button.button == 3){
+			if (event->button.button == 3) {
 				gtk_menu_popup(GTK_MENU(self.menu), NULL, NULL, 0, event, event->button.button, (guint32)(event->button.time));
 				return HANDLED;
-			}else{
+			} else {
 				dbg (1, "normal button press...");
 			}
 			break;
@@ -220,8 +249,10 @@ colour_box__on_event (GtkWidget* widget, GdkEvent* event, gpointer user_data)
 	}
 	return NOT_HANDLED;
 }
+#endif
 
 
+#ifdef GTK4_TODO
 static int
 colour_box__drag_dataget (GtkWidget *widget, GdkDragContext *drag_context, GtkSelectionData *data, guint info, guint time, gpointer user_data)
 {
@@ -230,7 +261,7 @@ colour_box__drag_dataget (GtkWidget *widget, GdkDragContext *drag_context, GtkSe
 
 	int box_num = GPOINTER_TO_UINT(user_data); // box_num corresponds to the colour index.
 
-	// convert to a pseudo uri string:
+	// convert to a pseudo uri string
 	sprintf(text, "colour:%i%c%c", (box_num + 1) % 16, 13, 10); //1 based to avoid atoi problems.
 
 	gtk_selection_data_set(data, GDK_SELECTION_TYPE_STRING, BITS_PER_CHAR_8, (guchar*)text, strlen(text));
@@ -248,18 +279,22 @@ colour_box__make_context_menu ()
 
 	return menu;
 }
+#endif
 
 
+#ifdef GTK4_TODO
 static int
 colour_box__lookup_idx (GtkWidget* widget)
 {
-	for(int i=0;i<PALETTE_SIZE;i++){
-		if(colour_button[i] == widget) return i;
+	for (int i=0;i<PALETTE_SIZE;i++) {
+		if (colour_button[i] == widget) return i;
 	}
 	return -1;
 }
+#endif
 
 
+#ifdef GTK4_TODO
 static void
 menu__open_selector (GtkMenuItem* menuitem, gpointer user_data)
 {
@@ -272,7 +307,7 @@ menu__open_selector (GtkMenuItem* menuitem, gpointer user_data)
 	void on_colour_change (GtkColorSelection* colorselection, gpointer user_data)
 	{
 		int box_idx = colour_box__lookup_idx(clicked_widget);
-		if(box_idx > -1){
+		if (box_idx > -1) {
 			GdkColor colour;
 			gtk_color_selection_get_current_color (colorselection, &colour);
 			colour_box__set_colour(box_idx, &colour);
@@ -308,7 +343,22 @@ menu__open_selector (GtkMenuItem* menuitem, gpointer user_data)
 	g_signal_connect (G_OBJECT(b), "destroy", G_CALLBACK(on_destroy), user_data);
 	g_signal_connect (G_OBJECT(sel), "color-changed", G_CALLBACK(on_colour_change), user_data);
 }
+#endif
 
+
+typedef struct 
+{
+  guint32 pixel;
+  guint16 red;
+  guint16 green;
+  guint16 blue;
+} GdkColor;
+
+static uint32_t
+colour_from_gdk (GdkColor* colour)
+{
+	return colour->red >> 8;
+}
 
 void
 colour_box_colourise ()
@@ -365,7 +415,9 @@ colour_box_colourise ()
 	}
 
 #define LUMSHIFT (0)
-	colour_box_add(&app->bg_colour); // "transparent" - none
+#ifdef GTK4_TODO
+	colour_box_add(&((Application*)app)->bg_colour); // "transparent" - none
+#endif
 
 	for (int i=0;i<PALETTE_SIZE-1;i++) {
 		float h, s, l; 
@@ -373,7 +425,7 @@ colour_box_colourise ()
 		s = (i % 2) ? .6 : .9;
 		l = 0.3 + ((i + LUMSHIFT)%4) / 6.0; /* 0.3 .. 0.8 */
 		hsl2rgb(h, s, l, &colour);
-		if (!colour_box_add(&colour)) {
+		if (!colour_box_add(colour_from_gdk(&colour))) {
 			fprintf(stderr, "WTF %d\n", i);
 		}
 	}

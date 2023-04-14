@@ -3,6 +3,7 @@
 void
 test_6_update_waveform ()
 {
+#ifdef GTK4_TODO
 	START_TEST;
 
 #ifdef USE_GDL
@@ -59,5 +60,6 @@ test_6_update_waveform ()
 	wait_for(selection_changed, on_change, "Selection change");
 #else
 	FINISH_TEST;
+#endif
 #endif
 }

@@ -6,8 +6,8 @@ AM_CFLAGS = \
 	-I$(top_srcdir)/lib \
 	-I$(top_srcdir)/lib/waveform \
 	$(DBUS_CFLAGS) \
-	$(GLIB_CFLAGS) \
-	$(GDK_CFLAGS)
+	$(PIXBUF_CFLAGS) \
+	$(GLIB_CFLAGS)
 
 noinst_LTLIBRARIES = libplayer.la
 

@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([Samplecat],[0.3.3],[tim@orford.org])
+AC_INIT([Samplecat],[0.4.0],[tim@orford.org])
 AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADER([config.h])
 AC_CANONICAL_HOST
@@ -62,7 +62,6 @@ AC_ARG_ENABLE(fftw,     AC_HELP_STRING([--disable-fftw], [disable usage of FFTW 
 AC_ARG_ENABLE(libass,   AC_HELP_STRING([--disable-libass], [disable usage of libass ]),enable_libass=$enableval,enable_libass="auto")
 AC_ARG_ENABLE(dock,     AC_HELP_STRING([--disable-dock], [disable usage of Gdl-dock ]), enable_dock=$enableval, enable_dock="auto")
 AC_ARG_ENABLE(aubio,    AC_HELP_STRING([--enable-aubio], [enable use of aubio for bpm detection]), enable_aubio=$enableval, enable_aubio="auto")
-AC_ARG_ENABLE(system-gtkglext, AC_HELP_STRING([--enable-system-gtkglext], [disable local opengl extension for gtk]), enable_system_gtkglext=$enableval, enable_system_gtkglext="no")
 
 case $target_os in
 	*darwin*)
@@ -111,10 +110,10 @@ LDFLAGS=$LDFLAGS_save
 dnl -----------------------------------------------------------------------------
 
 
-GTK_CFLAGS=`pkg-config gtk+-2.0 --cflags`
-GTK_LIBS=`pkg-config gtk+-2.0 --libs`
+GTK_CFLAGS=`pkg-config --cflags gtk4`
+GTK_LDFLAGS=`pkg-config --libs gtk4`
 AC_SUBST(GTK_CFLAGS)
-AC_SUBST(GTK_LIBS)
+AC_SUBST(GTK_LDFLAGS)
 
 if `pkg-config gtk+-2.0 --atleast-version=2.12`; then
   HAVE_GTK_2_12="yes"
@@ -127,6 +126,9 @@ AC_DEFINE(USE_GTK,1,[Enable GTK in libwaveform])
 
 GMODULE_LIBS=`pkg-config gmodule-2.0 --libs`
 AC_SUBST(GMODULE_LIBS)
+
+PIXBUF_CFLAGS=`pkg-config gdk-pixbuf-2.0 --cflags`
+AC_SUBST(PIXBUF_CFLAGS)
 
 dnl -----------------------------------------------------------------------------
 
@@ -157,9 +159,6 @@ if `pkg-config glib-2.0 --atleast-version=2.67`; then
 else
   HAVE_GLIB_2_67="no"
 fi;
-
-GDK_CFLAGS=`pkg-config --cflags gdk-2.0`
-AC_SUBST(GDK_CFLAGS)
 
 PKG_CHECK_MODULES(GTHREAD, gthread-2.0,, [true])
 AC_SUBST(GTHREAD_CFLAGS)
@@ -531,6 +530,7 @@ else
 	enable_valgrind=no
 fi;
 
+AM_CONDITIONAL(HAVE_INTROSPECTION, "false")
 
 CXXFLAGS="$CXXFLAGS -pipe -fmessage-length=200 -fdiagnostics-show-location=every-line"
 CFLAGS="$CFLAGS -pipe -fmessage-length=200 -fdiagnostics-show-location=every-line"

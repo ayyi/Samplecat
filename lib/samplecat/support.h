@@ -1,18 +1,19 @@
-/**
-* +----------------------------------------------------------------------+
-* | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
-* | copyright (C) 2007-2018 Tim Orford <tim@orford.org>                  |
-* +----------------------------------------------------------------------+
-* | This program is free software; you can redistribute it and/or modify |
-* | it under the terms of the GNU General Public License version 3       |
-* | as published by the Free Software Foundation.                        |
-* +----------------------------------------------------------------------+
-*
-*/
-#ifndef __samplecat_support_h__
-#define __samplecat_support_h__
+/*
+ +----------------------------------------------------------------------+
+ | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
+ | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
+ +----------------------------------------------------------------------+
+ | This program is free software; you can redistribute it and/or modify |
+ | it under the terms of the GNU General Public License version 3       |
+ | as published by the Free Software Foundation.                        |
+ +----------------------------------------------------------------------+
+ |
+ */
+
+#pragma once
+
 #include <stdint.h>
-#include <gdk/gdk.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include "utils/ayyi_utils.h"
 #include "file_manager/mimetype.h"
 #include "samplecat/typedefs.h"
@@ -48,8 +49,6 @@ GdkPixbuf*   get_iconbuf_from_mimetype (char* mimetype);
 
 bool         ensure_config_dir         ();
 
-uint32_t     color_gdk_to_rgba         (GdkColor*);
-
 uint8_t*     pixbuf_to_blob            (GdkPixbuf* in, guint* len);
 
 bool         can_use                   (GList*, const char*);
@@ -66,4 +65,5 @@ char*        gain2dbstring             (float);
 
 gchar*       str_replace               (const gchar* string, const gchar* search, const gchar* replace);
 
-#endif
+char*        remove_trailing_slash     (char* path);
+

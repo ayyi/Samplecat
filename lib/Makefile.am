@@ -1,4 +1,4 @@
-SUBDIRS = utils icon debug file_manager dir_tree waveform gdl gtk samplecat audio_analysis yaml test
+SUBDIRS = utils icon debug file_manager dir_tree waveform yaml gtk gdl samplecat audio_analysis test
 
 EXTRA_DIST = dnd/dnd.h
 

@@ -1,14 +1,15 @@
-/**
-* +----------------------------------------------------------------------+
-* | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
-* | copyright (C) 2007-2020 Tim Orford <tim@orford.org>                  |
-* +----------------------------------------------------------------------+
-* | This program is free software; you can redistribute it and/or modify |
-* | it under the terms of the GNU General Public License version 3       |
-* | as published by the Free Software Foundation.                        |
-* +----------------------------------------------------------------------+
-*
-*/
+/*
+ +----------------------------------------------------------------------+
+ | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
+ | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
+ +----------------------------------------------------------------------+
+ | This program is free software; you can redistribute it and/or modify |
+ | it under the terms of the GNU General Public License version 3       |
+ | as published by the Free Software Foundation.                        |
+ +----------------------------------------------------------------------+
+ |
+ */
+
 #include <stdbool.h>
 #include <glib.h>
 #include <glib-object.h>
@@ -95,14 +96,14 @@ void       test_finish      ();
 #define FAIL_TEST_TIMER(msg) \
 	{TEST.current.finished = true; \
 	passed = false; \
-	printf("%s%s%s\n", red, msg, white); \
+	printf("%s%s%s\n", ayyi_red, msg, ayyi_white); \
 	test_finish(); \
 	return G_SOURCE_REMOVE;}
 
 #define FAIL_TEST_NULL(msg) \
 	{TEST.current.finished = true; \
 	passed = false; \
-	printf("%s%s%s\n", red, msg, white); \
+	printf("%s%s%s\n", ayyi_red, msg, white); \
 	test_finish(); \
 	return NULL;}
 
