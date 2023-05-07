@@ -93,7 +93,7 @@ next_test ()
 		gboolean (*test)() = tests[TEST.current.test];
 		dbg(2, "test %i of %i.", TEST.current.test + 1, TEST.n_tests);
 
-		if (TEST.before_each){
+		if (TEST.before_each) {
 			void ready ()
 			{
 				g_timeout_add(1, run_test, tests[TEST.current.test]);
@@ -132,7 +132,7 @@ test_finish ()
 void
 test_log_start (const char* func)
 {
-	printf("%srunning %i of %i: %s%s ...\n", bold, TEST.current.test + 1, TEST.n_tests, func, ayyi_white);
+	printf("%srunning %i of %i: %s%s ...\n", ayyi_bold, TEST.current.test + 1, TEST.n_tests, func, ayyi_white);
 }
 
 

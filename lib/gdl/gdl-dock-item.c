@@ -119,7 +119,8 @@ static void     gdl_dock_item_present       (GdlDockObject     *object,
 
 static void     gdl_dock_item_popup_menu    (GdlDockItem *item,
                                              guint        button,
-                                             guint32      time);
+                                             double       x,
+                                             double       y);
 #ifdef GTK4_TODO
 static void     gdl_dock_item_drag_start    (GdlDockItem *item);
 #endif
@@ -1221,7 +1222,7 @@ gdl_dock_item_click_gesture_pressed (GtkGestureClick *gesture, int n_press, doub
 			}
 			break;
 		case GDK_BUTTON_SECONDARY:
-        	gdl_dock_item_popup_menu (item, button, 0);
+        	gdl_dock_item_popup_menu (item, button, widget_x, widget_y);
 	        event_handled = TRUE;
 			break;
 		default:
@@ -1635,7 +1636,7 @@ gdl_dock_item_detach_menu (GtkWidget *widget, GtkMenu *menu)
 #endif
 
 static void
-gdl_dock_item_popup_menu (GdlDockItem *item, guint button, guint32 XXXXXXtime)
+gdl_dock_item_popup_menu (GdlDockItem *item, guint button, double x, double y)
 {
 	GdlDockItemPrivate* _item = item->priv;
 
@@ -1678,6 +1679,11 @@ gdl_dock_item_popup_menu (GdlDockItem *item, guint button, guint32 XXXXXXtime)
 #endif
 		gtk_popover_popup(GTK_POPOVER(_item->menu));
 	}
+
+#ifdef GTK4_TODO
+	const GdkRectangle rect = {0,};
+	gtk_popover_set_pointing_to (GTK_POPOVER(popover), &rect);
+#endif
 }
 
 #ifdef GTK4_TODO
@@ -1759,7 +1765,7 @@ gdl_dock_item_tab_button (GtkWidget *widget, GdkEventButton *event, gpointer dat
         break;
 
     case 3:
-        gdl_dock_item_popup_menu (item, button, 0);
+        gdl_dock_item_popup_menu (item, button, event->button.x, event->button.y);
         break;
 
     default:

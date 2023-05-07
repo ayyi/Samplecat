@@ -13,9 +13,9 @@
 #include "config.h"
 #include <gtk/gtk.h>
 #include "debug/debug.h"
-#include "utils/mime_type.h"
 #include "utils/ayyi_utils.h"
 #include "dnd/dnd.h"
+#include "file_manager/mimetype.h"
 #include "file_manager/file_manager.h"
 #include "samplecat/model.h"
 

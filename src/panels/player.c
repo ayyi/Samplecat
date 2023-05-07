@@ -93,11 +93,6 @@ pc_add_widgets ()
 	GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(pc->widget), vbox);
 
-#ifndef USE_GDL
-	GtkWidget* label1 = gtk_label_new("Player Control");
-	gtk_box_pack_start(GTK_BOX(vbox), label1, EXPAND_FALSE, FILL_TRUE, 0);
-#endif
-
 	#define BORDERMARGIN (2)
 	#define MarginLeft (5)
 
@@ -341,9 +336,7 @@ player_control_on_show_hide (bool enable)
 	static guint play_pos_handler = 0;
 #endif
 
-#ifdef USE_GDL
-	gtk_widget_show(playercontrol->widget);
-#endif
+	gtk_widget_set_visible(playercontrol->widget, true);
 
 	if (!enable) {
 #ifdef HAVE_JACK

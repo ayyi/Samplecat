@@ -60,7 +60,6 @@ AC_ARG_ENABLE(gl-app,   AS_HELP_STRING([--enable-gl_app], [build the gl applicat
 AC_ARG_ENABLE(opengl,   AC_HELP_STRING([--disable-opengl], [disable use of OpenGL]),enable_opengl=$enableval,enable_opengl="auto")
 AC_ARG_ENABLE(fftw,     AC_HELP_STRING([--disable-fftw], [disable usage of FFTW ]),enable_fftw=$enableval,enable_fftw="auto")
 AC_ARG_ENABLE(libass,   AC_HELP_STRING([--disable-libass], [disable usage of libass ]),enable_libass=$enableval,enable_libass="auto")
-AC_ARG_ENABLE(dock,     AC_HELP_STRING([--disable-dock], [disable usage of Gdl-dock ]), enable_dock=$enableval, enable_dock="auto")
 AC_ARG_ENABLE(aubio,    AC_HELP_STRING([--enable-aubio], [enable use of aubio for bpm detection]), enable_aubio=$enableval, enable_aubio="auto")
 
 case $target_os in
@@ -478,15 +477,6 @@ fi
 
 dnl -----------------------------------------------------------------------------
 
-if test "$enable_dock" = "auto"; then
-	enable_dock="yes"
-fi
-if test "$enable_dock" = "yes"; then
-	AC_DEFINE(USE_GDL, 1, Use Gdl-dock)
-fi
-AM_CONDITIONAL(ENABLE_GDL, test "$enable_dock" = "yes")
-AC_SUBST(GDL_CFLAGS)
-
 PKG_CHECK_MODULES(XML, libxml-2.0 >= 2.2.8)
 AC_SUBST(XML_CFLAGS)
 AC_SUBST(XML_LIBS)
@@ -558,6 +548,7 @@ AC_CONFIG_FILES([lib/yaml/Makefile])
 AC_CONFIG_FILES([layouts/Makefile])
 AC_CONFIG_FILES([src/Makefile])
 AC_CONFIG_FILES([src/panels/Makefile])
+AC_CONFIG_FILES([src/widgets/Makefile])
 AC_CONFIG_FILES([test/ui/Makefile])
 AC_CONFIG_FILES([test/unit/Makefile])
 AC_CONFIG_FILES([experimental/Makefile])

@@ -10,7 +10,7 @@
  */
 #include "config.h"
 #include <gtk/gtk.h>
-#include "utils/mime_type.h"
+#include "file_manager/mimetype.h"
 #include "file_manager/file_manager.h"
 #include "view_dir_tree.h"
 

@@ -15,7 +15,6 @@
 #include <gtk/gtk.h>
 #include "debug/debug.h"
 #include "gtk/menu.h"
-#include "file_manager.h"
 #include "types.h"
 #include "support.h"
 #include "application.h"
@@ -92,7 +91,7 @@ colour_box_new (GtkWidget* parent)
 		gtk_widget_set_visible(e, false);
 #endif
 
-		gtk_box_prepend(GTK_BOX(parent), e);
+		gtk_flow_box_prepend(GTK_FLOW_BOX(parent), e);
 	}
 #ifdef GTK4_TODO
 	if (!self.menu) self.menu = colour_box__make_context_menu();

@@ -29,7 +29,6 @@ char*       audio_path_truncate      (char*, char);
 char err      [32] = RED"error"WHITE;
 char warn     [32] = YELLOW"warning:"WHITE;
 
-char bold     [10] = "\x1b[1;39m"; // 1 = bright
 char grey     [10] = "\x1b[2;39m"; // 2 = dim
 char yellow   [10] = YELLOW;
 char yellow_r [10] = "\x1b[30;43m";
@@ -45,7 +44,6 @@ char fail     [32] = " [\x1b[1;31mFAIL\x1b[0;39m]";
 #else
 extern char err      [32];
 extern char warn     [32];
-extern char bold     [10];
 extern char grey     [10];
 extern char yellow   [10];
 extern char yellow_r [10];

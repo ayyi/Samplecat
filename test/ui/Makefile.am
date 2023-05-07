@@ -34,7 +34,7 @@ endif
 ui_test_LDADD = \
 	../../src/application.o \
 	../../lib/gtk/cellrenderer_hypertext.o \
-	../../src/colour_box.o \
+	../../src/widgets/colour_box.o \
 	../../src/dh_tree.o \
 	../../src/dnd.o \
 	../../src/panels/library.o \

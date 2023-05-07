@@ -415,9 +415,6 @@ application_play (Sample* sample)
 			statusbar_print(1, "playing 1 of %i ...", g_list_length(play->queue));
 		else
 			statusbar_print(1, "");
-#ifndef USE_GDL
-		if (app->view_options[SHOW_PLAYER].value) show_player(true);
-#endif
 
 	} else {
 		statusbar_print(1, "File not playable");

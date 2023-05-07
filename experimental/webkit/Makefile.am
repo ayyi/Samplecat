@@ -5,7 +5,7 @@ samplecat_webkit_SOURCES = \
 	webkit.c \
 	util.c util.h \
 	table.c table.h \
-	$(top_srcdir)/src/icon_theme.c $(top_srcdir)/src/icon_theme.h
+	$(top_srcdir)/lib/gtk/icon_theme.c $(top_srcdir)/lib/gtk/icon_theme.h
 
 if !ENABLE_SYSTEM_GTKGLEXT
 LOCAL_GTK_LIBS = \

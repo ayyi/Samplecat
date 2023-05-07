@@ -3,10 +3,9 @@
 void
 test_6_update_waveform ()
 {
-#ifdef GTK4_TODO
 	START_TEST;
 
-#ifdef USE_GDL
+#ifdef GTK4_TODO
 	assert(view_is_visible("Waveform"), "expected waveform panel visible");
 	assert(view_is_visible("Library"), "expected library panel visible");
 
@@ -58,8 +57,6 @@ test_6_update_waveform ()
 	}
 
 	wait_for(selection_changed, on_change, "Selection change");
-#else
+#endif
 	FINISH_TEST;
-#endif
-#endif
 }

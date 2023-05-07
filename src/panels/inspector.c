@@ -24,7 +24,6 @@
 #include "model.h"
 #include "application.h"
 #include "sample.h"
-#include "gtk/editablelabelbutton.h"
 #include "gdl/utils.h"
 
 #define TYPE_INSPECTOR            (inspector_get_type ())

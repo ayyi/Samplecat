@@ -18,7 +18,7 @@
 #include "debug/debug.h"
 #include "gdl/gdl-dock-item.h"
 #include "support.h"
-#include "colour_box.h"
+#include "widgets/colour_box.h"
 #include "library.h"
 #include "application.h"
 
@@ -81,7 +81,7 @@ tags_instance_init (Tags* self, gpointer klass)
 	gdl_dock_item_set_child(GDL_DOCK_ITEM(self), vbox);
 
 	panel.hbox1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-	panel.hbox2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	panel.hbox2 = gtk_flow_box_new();
 
 	panel.colour = colour_box_new(panel.hbox2);
 	panel.category = tag_selector_new();

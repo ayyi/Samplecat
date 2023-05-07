@@ -78,13 +78,11 @@
 			}
 			g_list_free(children);
 		}
-#ifdef USE_GDL
 		else if (GDL_IS_DOCK_ITEM(widget)) {
 			(*depth)++;
 			print_item(widget, depth);
 			(*depth)--;
 		}
-#endif
 		*/
 	}
 

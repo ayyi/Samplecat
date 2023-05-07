@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 VALA_DIR =
-SUBDIRS = panels $(VALA_DIR)
+SUBDIRS = widgets panels $(VALA_DIR)
 
 AM_CFLAGS = \
 	-O2 \
@@ -50,9 +50,7 @@ OPENGL_LDFLAGS = \
 	$(GL_LDFLAGS)
 endif
 
-if ENABLE_GDL
-GDL_LDFLAGS = $(top_srcdir)/lib/gdl/.libs/libgdl-4.a $(XML_LIBS)
-endif
+DOCK_LDFLAGS = $(top_srcdir)/lib/gdl/.libs/libgdl-4.a $(XML_LIBS)
 
 if ENABLE_YAML
 YAML_LDFLAGS = \
@@ -69,7 +67,6 @@ samplecat_SOURCES = \
 	window.c window.h \
 	progress_dialog.c progress_dialog.h \
 	dh_tree.c dh_tree.h \
-	colour_box.c colour_box.h \
 	dnd.c dnd.h \
 	support.c support.h \
 	$(FFT_SRC) \
@@ -82,10 +79,11 @@ samplecat_LDADD = \
 	$(top_srcdir)/lib/samplecat/.libs/libsamplecat.a \
 	$(top_srcdir)/lib/samplecat/db/libsamplecatdb.a \
 	$(top_srcdir)/lib/file_manager/libfilemanager.a \
-	$(GDL_LDFLAGS) \
+	$(DOCK_LDFLAGS) \
 	$(top_srcdir)/lib/utils/libutils.a \
 	$(top_srcdir)/lib/gtk/libgtk.la \
 	$(top_srcdir)/src/panels/libpanels.la \
+	$(top_srcdir)/src/widgets/.libs/libwidgets.a \
 	$(SAMPLECAT_LIBS) \
 	$(AYYI_LIBS) \
 	$(DBUS_LIBS) \

@@ -116,8 +116,8 @@ static xmlNodePtr gdl_dock_layout_find_layout   (GdlDockLayout      *layout,
 static bool     gdl_dock_layout_save_to_yaml    (GdlDockMaster*, const char*);
 static bool     gdl_dock_layout_load_yaml       (GdlDockMaster*, const char*);
 
-static bool     load_dock                       (yaml_parser_t*, const yaml_event_t*, gpointer);
-static bool     dock_handler                    (yaml_parser_t*, const yaml_event_t*, char*, gpointer);
+static bool     load_dock                       (yaml_parser_t*, const yaml_event_t*, const char*, gpointer);
+static bool     dock_handler                    (yaml_parser_t*, const yaml_event_t*, const char*, gpointer);
 
 typedef struct {
 	char           name[32];
@@ -812,7 +812,7 @@ gdl_dock_layout_load_from_string (GdlDockLayout *layout, const gchar *str)
 #ifdef GDL_DOCK_YAML
 	Stack stack = {.master = (GdlDockMaster*)layout->priv->master};
 
-	return yaml_load_string (str, (YamlHandler[]){
+	return yaml_load_string (str, (YamlMappingHandler[]){
 		{"dock", load_dock, &stack},
 		{NULL}
 	});
@@ -880,9 +880,7 @@ gdl_dock_layout_save_to_file (GdlDockLayout *layout, const gchar *filename)
 
 #ifdef GDL_DOCK_YAML
 	if (!gdl_dock_layout_save_to_yaml (layout->priv->master, filename)) {
-#ifdef GTK4_TODO
-		pwarn("yaml save failed");
-#endif
+		g_warning("yaml save failed");
 	}
 #endif
 
@@ -1048,25 +1046,12 @@ gdl_dock_layout_setup_object2 (GdlDockMaster* master, Stack* stack, gint *n_afte
 
 
 static bool
-add_param (yaml_parser_t* parser, const yaml_event_t* _event, gpointer _stack)
+add_param (const yaml_event_t* event, const char* prop, gpointer _stack)
 {
 	Stack* stack = _stack;
 	Constructor* constructor = &stack->items[stack->sp];
 
-	char* prop = g_strdup((char*)_event->data.scalar.value);
-
-	yaml_event_t event;
-	if (!yaml_parser_parse(parser, &event)) {
-		yaml_event_delete(&event);
-		return false;
-	}
-	if (event.type == YAML_MAPPING_START_EVENT) {
-		bool ok = dock_handler (parser, &event, prop, stack);
-		g_free(prop);
-		yaml_event_delete(&event);
-		return ok;
-	};
-	char* val = (char*)event.data.scalar.value;
+	char* val = (char*)event->data.scalar.value;
 
 	GParamSpec* param = g_object_class_find_property (constructor->object_class, prop);
 	if (param) {
@@ -1081,20 +1066,18 @@ add_param (yaml_parser_t* parser, const yaml_event_t* _event, gpointer _stack)
 			g_value_set_static_string (&serialized, val);
 
 			DockParameter* arg = &constructor->params[constructor->n_params++];
-			arg->name = prop;
+			arg->name = g_strdup(prop);
 			g_value_init (&(arg->value), param->value_type);
 			g_value_transform (&serialized, &arg->value);
 		}
 	}
-	else g_free(prop);
 
-	yaml_event_delete(&event);
 	return true;
 }
 
 
 static bool
-dock_handler (yaml_parser_t* parser, const yaml_event_t* event, char* name, gpointer _stack)
+dock_handler (yaml_parser_t* parser, const yaml_event_t* event, const char* name, gpointer _stack)
 {
 	g_assert(event->type == YAML_MAPPING_START_EVENT);
 
@@ -1129,7 +1112,7 @@ dock_handler (yaml_parser_t* parser, const yaml_event_t* event, char* name, gpoi
 		constructor->object_class = g_type_class_ref (object_type);
 	}
 
-	if(!load_mapping(parser,
+	if(!yaml_load_section(parser,
 		(YamlHandler[]){
 			{NULL, add_param, stack},
 			{NULL}
@@ -1138,6 +1121,7 @@ dock_handler (yaml_parser_t* parser, const yaml_event_t* event, char* name, gpoi
 			{NULL, dock_handler, stack},
 			{NULL}
 		},
+		NULL,
 		stack
 	)) return false;
 
@@ -1200,14 +1184,15 @@ dock_handler (yaml_parser_t* parser, const yaml_event_t* event, char* name, gpoi
 
 
 static bool
-load_dock (yaml_parser_t* parser, const yaml_event_t* event, gpointer user_data)
+load_dock (yaml_parser_t* parser, const yaml_event_t* event, const char*, gpointer user_data)
 {
-	return load_mapping(parser,
+	return yaml_load_section(parser,
 		NULL,
 		(YamlMappingHandler[]){
 			{NULL, dock_handler, user_data},
 			{NULL}
 		},
+		NULL,
 		user_data
 	);
 }
@@ -1220,7 +1205,7 @@ gdl_dock_layout_load_yaml (GdlDockMaster *master, const char* filename)
 	{
 		Stack stack = {.master = _master};
 
-		return yaml_load(fp, (YamlHandler[]){
+		return yaml_load(fp, (YamlMappingHandler[]){
 			{"dock", load_dock, &stack},
 			{NULL}
 		});
@@ -1250,16 +1235,16 @@ gdl_dock_layout_save_to_yaml (GdlDockMaster *master, const char* filename)
 		bool ret = false;
 
 		typedef struct {
-			yaml_event_t  event;
 			int           depth;
 		} Context;
 
 		void gdl_dock_layout_foreach_object_save (GdlDockObject *object, gpointer user_data)
 		{
 			Context* context = user_data;
+			g_auto(yaml_event_t) event;
 
 			const char* type = gdl_dock_object_nick_from_type (G_TYPE_FROM_INSTANCE (object));
-			map_open_(&context->event, type);
+			map_open_(&event, type);
 
 			guint n_props;
 			GParamSpec **props = g_object_class_list_properties (G_OBJECT_GET_CLASS (object), &n_props);
@@ -1279,7 +1264,7 @@ gdl_dock_layout_save_to_yaml (GdlDockMaster *master, const char* filename)
 					// only save the object "name" if it is set (i.e. don't save the empty string)
 					if (strcmp (p->name, GDL_DOCK_NAME_PROPERTY) || g_value_get_string (&v)) {
 						if (g_value_transform (&v, &attr))
-							if(!yaml_add_key_value_pair(p->name, g_value_get_string(&attr))) goto error;
+							if (!yaml_add_key_value_pair(p->name, g_value_get_string(&attr))) goto error;
 					}
 
 					g_value_unset (&v);
@@ -1292,25 +1277,22 @@ gdl_dock_layout_save_to_yaml (GdlDockMaster *master, const char* filename)
 				gdl_dock_object_foreach_child (object, gdl_dock_layout_foreach_object_save, context);
 			}
 
-			end_map(&context->event);
+			end_map(&event);
 			return;
 		  error:
-#ifdef GTK4_TODO
-			perr("save error");
-#endif
+			g_error("save error");
 		}
 
 		Context context = {0};
 
-		yaml_start(fp, &context.event);
+		g_auto(yaml_event_t)  event;
+		yaml_start(fp);
 
 		gdl_dock_master_foreach_toplevel (master, true, (GFunc) gdl_dock_layout_foreach_object_save, (gpointer) &context);
 
-		EMIT__(yaml_mapping_end_event_initialize(&context.event), &context.event);
+		end_map(&event);
+		end_document;
 
-		end_document_(&emitter, &context.event);
-
-		yaml_event_delete(&context.event);
 		yaml_emitter_delete(&emitter);
 
 		ret = true;

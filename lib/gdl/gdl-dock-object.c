@@ -1572,16 +1572,15 @@ const gchar *
 gdl_dock_object_nick_from_type (GType type)
 {
     gchar *nick = NULL;
-    guint i = 0;
 
     if (!dock_register)
         gdl_dock_object_register_init ();
 
-    for (i=0; i < dock_register->len; i++) {
+    for (int i=0; i < dock_register->len; i++) {
         struct DockRegisterItem item = g_array_index (dock_register, struct DockRegisterItem, i);
 
-	if (g_direct_equal (item.type, (gpointer) type))
-		nick = g_strdup (item.nick);
+        if (g_direct_equal (item.type, (gpointer) type))
+            nick = item.nick;
     }
 
     return nick ? nick : g_type_name (type);

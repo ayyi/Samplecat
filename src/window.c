@@ -16,12 +16,10 @@
 #include <math.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
-#ifdef USE_GDL
 #include "gdl/gdl-dock-layout.h"
 #include "gdl/gdl-dock-bar.h"
 #include "gdl/gdl-dock-paned.h"
 #include "gdl/registry.h"
-#endif
 #include "debug/debug.h"
 #include "gtk/menu.h"
 #ifdef GTK4_TODO
@@ -158,21 +156,16 @@ static Panel*    panel_lookup_by_name            (const char*);
 #ifdef GTK4_TODO
 static void       make_menu_actions               (struct _accel[], int, void (*add_to_menu)(GtkAction*));
 #endif
-#ifndef USE_GDL
-static void       left_pane2                      ();
-#endif
 static void       window_on_layout_changed        ();
 
 #ifdef GTK4_TODO
 static void       k_delete_row                    (GtkAccelGroup*, gpointer);
 #endif
-#ifdef USE_GDL
 #ifdef GTK4_TODO
 static void       k_show_layout_manager           (GtkAccelGroup*, gpointer);
 #endif
 static void       window_load_layout              (const char*);
 static void       window_save_layout              ();
-#endif
 
 #ifdef ROTATOR
 GtkWidget*
@@ -192,9 +185,7 @@ Accel window_keys[] = {
 	{"Quit",           NULL,        {{(char)'q',    GDK_CONTROL_MASK},  {0, 0}}, on_quit,               GINT_TO_POINTER(0)},
 	{"Close",          NULL,        {{(char)'w',    GDK_CONTROL_MASK},  {0, 0}}, on_quit,               GINT_TO_POINTER(0)},
 	{"Delete",         NULL,        {{GDK_Delete,   0               },  {0, 0}}, k_delete_row,          NULL},
-#ifdef USE_GDL
 	{"Layout Manager", NULL,        {{(char)'l',    GDK_CONTROL_MASK},  {0, 0}}, k_show_layout_manager, NULL},
-#endif
 };
 
 Accel fm_tree_keys[] = {
@@ -206,15 +197,6 @@ static GtkAccelGroup* accel_group = NULL;
 
 const char* preferred_width = "preferred-width";
 const char* preferred_height = "preferred-height";
-
-#ifndef USE_GDL
-#define PACK(widget, position, width, height, id, name, D) \
-	if (GTK_IS_BOX(D)) \
-		gtk_box_pack_start(GTK_BOX(D), widget, EXPAND_FALSE, FILL_FALSE, 0); \
-	else \
-		if (!gtk_paned_get_child1(GTK_PANED(D))) gtk_paned_add1(GTK_PANED(D), widget); \
-		else gtk_paned_add2(GTK_PANED(D), widget);
-#endif
 
 
 GtkWidget*
@@ -254,11 +236,10 @@ window_new (GtkApplication* gtk, gpointer user_data)
 	GtkWidget* dock = window.dock = gdl_dock_new();
 
 	window.layout =	gdl_dock_layout_new(gdl_dock_object_get_master(GDL_DOCK_OBJECT(dock)));
-	gchar* cwd = g_get_current_dir();
+	g_autofree gchar* cwd = g_get_current_dir();
 	window.layout->dirs[0] = g_strdup_printf("%s/layouts", app->configctx.dir);
 	window.layout->dirs[1] = g_strdup_printf("%s/samplecat/layouts", SYSCONFDIR);
 	window.layout->dirs[2] = g_strdup_printf("%s/layouts", cwd);
-	g_free(cwd);
 
 	GtkWidget* dockbar = gdl_dock_bar_new(gdl_dock_object_get_master(GDL_DOCK_OBJECT(dock)));
 	gdl_dock_bar_set_style(GDL_DOCK_BAR(dockbar), GDL_DOCK_BAR_TEXT);
@@ -307,14 +288,6 @@ window_new (GtkApplication* gtk, gpointer user_data)
 		g_signal_emit_by_name (app, "layout-changed");
 	}
 	g_signal_connect(G_OBJECT(gdl_dock_object_get_master((GdlDockObject*)window.dock)), "layout-changed", G_CALLBACK(_on_layout_changed), NULL);
-
-#ifndef USE_GDL
-#ifdef HAVE_FFTW3
-	if (app->view_options[SHOW_SPECTROGRAM].value) {
-		show_spectrogram(true);
-	}
-#endif
-#endif
 
 	{
 		GtkWidget* hbox_statusbar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
@@ -527,12 +500,9 @@ window_on_configure (GtkWidget* widget, gpointer user_data)
 	if (!window_size_set) {
 		//take the window size from the config file, or failing that, from the treeview requisition.
 		int width = atoi(app->config.window_width);
-#ifdef USE_GDL
+
 		// panels not yet created, so widget requisition cannot be used.
 		if (!width) width = 640;
-#else
-		if (!width) width = app->libraryview->widget->requisition.width + SCROLLBAR_WIDTH_HACK;
-#endif
 		int window_height = atoi(app->config.window_height);
 		if (!window_height) window_height = 480; //MIN(app->libraryview->widget->requisition.height, 900);  -- ignore the treeview height, is meaningless
 
@@ -614,69 +584,6 @@ static gboolean
 window_on_destroy (GtkWidget* widget, gpointer user_data)
 {
 	return false;
-}
-#endif
-
-
-#ifndef USE_GDL
-static void
-left_pane2 ()
-{
-	/*
-	void on_inspector_allocate(GtkWidget* widget, GtkAllocation* allocation, gpointer user_data)
-	{
-		dbg(0, "req=%i allocation=%i", widget->requisition.height, allocation->height);
-		int tot_height = app->vpaned->allocation.height;
-		if(allocation->height > widget->requisition.height){
-			gtk_paned_set_position(GTK_PANED(app->vpaned), tot_height - widget->requisition.height);
-		}
-		//increase size:
-		if(allocation->height < widget->requisition.height){
-			if(allocation->height < tot_height / 2){
-				gtk_paned_set_position(GTK_PANED(app->vpaned), MAX(tot_height / 2, tot_height - widget->requisition.height));
-			}
-		}
-	}
-
-	*/
-
-	player_control_new();
-	if (!app->view_options[SHOW_PLAYER].value)
-		gtk_widget_set_no_show_all(panels[PANEL_TYPE_PLAYER].widget, true);
-
-	inspector_new();
-	gtk_paned_add2(GTK_PANED(window.vpaned), (GtkWidget*)app->inspector);
-	//g_signal_connect(app->inspector->widget, "size-allocate", (gpointer)on_inspector_allocate, NULL);
-
-	void on_vpaned_allocate (GtkWidget* widget, GtkAllocation* vp_allocation, gpointer user_data)
-	{
-		static int previous_height = 0;
-		if (!app->inspector || vp_allocation->height == previous_height) return;
-
-		int inspector_requisition = 240;//app->inspector->vbox->requisition.height; //FIXME
-		if (!inspector_requisition) return;
-
-		if (!app->inspector->user_height) {
-			//user has not specified a height so we have free reign
-
-			int tot_height = vp_allocation->height;
-			dbg(1, "req=%i tot_allocation=%i %i", inspector_requisition, tot_height, ((GtkWidget*)app->inspector)->allocation.height);
-
-			//small window - dont allow the inspector to take up more than half the space.
-			if (vp_allocation->height < inspector_requisition) {
-				gtk_paned_set_position(GTK_PANED(window.vpaned), MAX(tot_height / 2, tot_height - inspector_requisition));
-			}
-
-			//large window - dont allow the inspector to be too big
-			int current_insp_height = tot_height - gtk_paned_get_position(GTK_PANED(window.vpaned));
-			if (current_insp_height > inspector_requisition) {
-				gtk_paned_set_position(GTK_PANED(window.vpaned), tot_height - inspector_requisition);
-			}
-		}
-		previous_height = vp_allocation->height;
-	}
-
-	g_signal_connect(window.vpaned, "size-allocate", (gpointer)on_vpaned_allocate, NULL);
 }
 #endif
 
@@ -821,7 +728,6 @@ show_spectrogram (bool enable)
 void
 show_filemanager (bool enable)
 {
-#ifdef USE_GDL
 #if 1
 	// using gtk_widget_show() appears to work, but the correct way would be to use gdl_dock_item_hide_item() and gdl_dock_item_show_item()
 	show_widget_if((GtkWidget*)gdl_dock_get_item_by_name(GDL_DOCK(window.dock), "files"), enable);
@@ -853,11 +759,6 @@ show_filemanager (bool enable)
 		gdl_dock_object_detach(GDL_DOCK_OBJECT(dock_item), false);
 	}
 #endif
-
-#else
-	show_widget_if(app->fm_view, enable);
-	show_widget_if(app->dir_treeview2->widget, enable);
-#endif
 }
 
 
@@ -865,11 +766,7 @@ void
 show_player (bool enable)
 {
 #ifdef GTK4_TODO
-#ifdef USE_GDL
 	show_widget_if(panels[PANEL_TYPE_PLAYER].widget, enable);
-#else
-	show_widget_if(panels[PANEL_TYPE_PLAYER].widget, enable);
-#endif
 
 	player_control_on_show_hide(enable);
 #endif
@@ -879,25 +776,6 @@ show_player (bool enable)
 static void
 window_on_layout_changed ()
 {
-#ifndef USE_GDL
-	//what is the height of the inspector?
-
-	if (app->inspector) {
-		GtkWidget* widget;
-		if ((widget = (GtkWidget*)app->inspector)) {
-			int tot_height = window.vpaned->allocation.height;
-			int max_auto_height = tot_height / 2;
-			dbg(1, "inspector_height=%i tot=%i", widget->allocation.height, tot_height);
-			if (widget->allocation.height < app->inspector->preferred_height
-					&& widget->allocation.height < max_auto_height) {
-				int inspector_height = MIN(max_auto_height, app->inspector->preferred_height);
-				dbg(1, "setting height : %i/%i", tot_height - inspector_height, inspector_height);
-				gtk_paned_set_position(GTK_PANED(window.vpaned), tot_height - inspector_height);
-			}
-		}
-	}
-#endif
-
 	// scroll to current dir in the directory list
 	if (((Application*)app)->dir_treeview2) vdtree_set_path(((Application*)app)->dir_treeview2, ((Application*)app)->dir_treeview2->path);
 }
@@ -912,7 +790,6 @@ k_delete_row (GtkAccelGroup* _, gpointer user_data)
 #endif
 
 
-#ifdef USE_GDL
 #ifdef GTK4_TODO
 static void
 k_show_layout_manager (GtkAccelGroup* _, gpointer user_data)
@@ -994,7 +871,7 @@ window_load_layout (const char* layout_name)
 
 	if (!have_layout) {
 		if (app->temp_view) {
-			perr("unable to find File Manger layout");
+			perr("unable to find File Manager layout");
 			exit(1);
 		}
 
@@ -1027,7 +904,6 @@ window_save_layout ()
 
 	g_free(dir);
 }
-#endif
 
 
 static Panel*

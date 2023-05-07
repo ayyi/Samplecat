@@ -11,6 +11,7 @@
  */
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <glib.h>
 #include <glib-object.h>
 #define __wf_private__
@@ -72,12 +73,14 @@ void       test_finish      ();
 	if(TEST.current.finished) return;
 
 #define FINISH_TEST \
+	{ \
 	if(__test_idx != TEST.current.test) return; \
 	printf("%s: finish\n", TEST.current.name); \
 	TEST.current.finished = true; \
 	passed = true; \
 	test_finish(); \
-	return;
+	return; \
+	}
 
 #define FINISH_TEST_TIMER_STOP \
 	if(__test_idx != TEST.current.test) return G_SOURCE_REMOVE; \

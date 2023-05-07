@@ -77,7 +77,6 @@ drag_received (GtkWidget* widget, GdkDragContext* drag_context, gint x, gint y, 
 		gint by = y - treeview_top - 20;
 #endif
 
-#ifdef USE_GDL
 		GdkWindow* top_window = gdk_window_get_toplevel(gtk_widget_get_toplevel(app->libraryview->widget)->window);
 		GdkWindow* window = app->libraryview->widget->window;
 		while((window = gdk_window_get_parent(window)) != top_window){
@@ -85,7 +84,6 @@ drag_received (GtkWidget* widget, GdkDragContext* drag_context, gint x, gint y, 
 			gdk_window_get_position(window, &x0, &y0);
 			by -= y0;
 		}
-#endif
 
 		if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(app->libraryview->widget), x, by, &path, NULL, NULL, NULL)){
 

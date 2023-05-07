@@ -97,9 +97,7 @@ make_context_menu (GtkWidget* widget)
 		{"Stop Playback",  G_CALLBACK(menu_play_stop),          GTK_STOCK_MEDIA_STOP},
 		{"-",                                                                       },
 		{"View",           G_CALLBACK(NULL),                    GTK_STOCK_PREFERENCES},
-	#ifdef USE_GDL
 		{"Layouts",        G_CALLBACK(NULL),                    GTK_STOCK_PROPERTIES},
-	#endif
 		{"Prefs",          G_CALLBACK(NULL),                    GTK_STOCK_PREFERENCES},
 	};
 
@@ -126,16 +124,11 @@ make_context_menu (GtkWidget* widget)
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(last->data), sub);
 
 	{
-#ifdef USE_GDL
 		GtkWidget* view = last->prev->prev->data;
-#else
-		GtkWidget* view = last->prev->data;
-#endif
 
 		GtkWidget* sub = gtk_menu_new();
 		gtk_menu_item_set_submenu(GTK_MENU_ITEM(view), sub);
 
-#ifdef USE_GDL
 		void set_view_state (GtkMenuItem* item, Panel_* panel, bool visible)
 		{
 			if(panel->handler){
@@ -175,48 +168,17 @@ make_context_menu (GtkWidget* widget)
 				g_signal_emit_by_name(((GdlDockObject*)window.dock)->master, "dock-item-added", dock_item);
 			}
 		}
-#else
-		void set_view_toggle_state (GtkMenuItem* item, ViewOption* option)
-		{
-			option->value = !option->value;
-			gulong sig_id = g_signal_handler_find(item, G_SIGNAL_MATCH_FUNC, 0, 0, 0, option->on_toggle, NULL);
-			if(sig_id){
-				g_signal_handler_block(item, sig_id);
-				gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), option->value);
-				g_signal_handler_unblock(item, sig_id);
-			}
-		}
 
-		void toggle_view (GtkMenuItem* item, gpointer _option)
-		{
-			PF;
-			ViewOption* option = (ViewOption*)_option;
-			option->on_toggle(option->value = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(item)));
-		}
-#endif
-
-#ifdef USE_GDL
 		int i; for(i=0;i<PANEL_TYPE_MAX;i++){
 			Panel_* option = &panels[i];
-#else
-		int i; for(i=0;i<MAX_VIEW_OPTIONS;i++){
-			ViewOption* option = &app->view_options[i];
-#endif
+
 			GtkWidget* menu_item = gtk_check_menu_item_new_with_mnemonic(option->name);
 			gtk_menu_shell_append(GTK_MENU_SHELL(sub), menu_item);
-#ifdef USE_GDL
 			option->menu_item = menu_item;
 			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menu_item), false); // TODO can leave til later
 			option->handler = g_signal_connect(G_OBJECT(menu_item), "activate", G_CALLBACK(toggle_view), GINT_TO_POINTER(i));
-#else
-			gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(menu_item), option->value);
-			option->value = !option->value; //toggle before it gets toggled back.
-			set_view_toggle_state((GtkMenuItem*)menu_item, option);
-			g_signal_connect(G_OBJECT(menu_item), "activate", G_CALLBACK(toggle_view), option);
-#endif
 		}
 
-#ifdef USE_GDL
 		void add_item (GtkMenuShell* parent, const char* name, GCallback callback, gpointer user_data)
 		{
 			GtkWidget* item = gtk_menu_item_new_with_label(name);
@@ -288,7 +250,6 @@ make_context_menu (GtkWidget* widget)
 		}
 		Idle* idle = idle_new(_view_menu_on_layout_changed, NULL);
 		g_signal_connect(G_OBJECT(((GdlDockObject*)window.dock)->master), "layout-changed", (GCallback)idle->run, idle);
-#endif
 	}
 
 	GtkWidget* menu_item = gtk_check_menu_item_new_with_mnemonic("Add Recursively");
@@ -302,7 +263,7 @@ make_context_menu (GtkWidget* widget)
 	g_signal_connect(G_OBJECT(menu_item), "activate", G_CALLBACK(toggle_loop_playback), NULL);
 	gtk_widget_set_no_show_all(menu_item, true);
 
-	if(themes){
+	if (themes) {
 		GtkWidget* theme_menu = gtk_menu_item_new_with_label("Icon Themes");
 		gtk_container_add(GTK_CONTAINER(sub), theme_menu);
 
