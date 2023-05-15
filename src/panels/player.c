@@ -1,6 +1,6 @@
 /*
  +----------------------------------------------------------------------+
- | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
+ | This file is part of Samplecat. https://ayyi.github.io/samplecat/    |
  | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
  | copyright (C) 2011 Robin Gareus <robin@gareus.org>                   |
  +----------------------------------------------------------------------+
@@ -43,7 +43,7 @@ static PlayCtrl* playercontrol;
 
 static void  pc_add_widgets       ();
 
-static void  cb_playpause         (GtkToggleButton*, gpointer user_data);
+static void  on_pause_toggled     (GtkToggleButton*, gpointer user_data);
 
 static guint slider1sigid;
 static void  slider_value_changed (GtkRange*, gpointer user_data);
@@ -128,12 +128,12 @@ pc_add_widgets ()
 	void _stop(GtkButton* button, gpointer _) { player_stop(); }
 	g_signal_connect((gpointer)pb1, "clicked", G_CALLBACK(_stop), NULL);
 
-	if (play->auditioner->playpause) {
+	if (play->auditioner->pause) {
 		pc->pbpause = gtk_toggle_button_new_with_label("GTK_STOCK_MEDIA_PAUSE");
 		gtk_button_set_icon_name ((GtkButton*)pc->pbpause, "media-pause");
 		gtk_widget_set_size_request(pc->pbpause, 100, -1);
-		gtk_box_append(GTK_BOX(pc->pbctrl), pc->pbpause);       // TODO FILL_TRUE
-		g_signal_connect((gpointer)pc->pbpause, "toggled", G_CALLBACK(cb_playpause), NULL);
+		gtk_box_append(GTK_BOX(pc->pbctrl), pc->pbpause);
+		g_signal_connect((gpointer)pc->pbpause, "toggled", G_CALLBACK(on_pause_toggled), NULL);
 	}
 
 	if (play->auditioner->position && play->auditioner->seek) {
@@ -262,10 +262,10 @@ cb_link_toggled (GtkToggleButton *btn, gpointer user_data)
 
 
 static void
-cb_playpause (GtkToggleButton *btn, gpointer user_data)
+on_pause_toggled (GtkToggleButton *btn, gpointer user_data)
 {
 	gtk_toggle_button_get_active(btn)
-		? application_pause()
+		? player_pause()
 		: application_play(NULL);
 }
 
@@ -355,7 +355,7 @@ player_control_on_show_hide (bool enable)
 	bool visible = gtk_widget_get_visible(pc->widget);
 
 	if (WIDGETS_CREATED) {
-		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(playercontrol->pbpause), play->status == PLAY_PAUSED);
+		gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(playercontrol->pbpause), play->state == PLAYER_PAUSED);
 	}
 
 	if (samplecat.model->selection && play->sample && (play->sample->id == samplecat.model->selection->id)) {

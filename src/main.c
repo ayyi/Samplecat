@@ -22,12 +22,10 @@ char * program_name;
 #endif
 
 #include "debug/debug.h"
-#include "samplecat.h"
 #ifdef USE_AYYI
   #include "ayyi.h"
   #include "ayyi_model.h"
 #endif
-#include "typedefs.h"
 #ifdef USE_TRACKER
   #include "db/tracker.h"
 #endif

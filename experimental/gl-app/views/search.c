@@ -19,7 +19,6 @@
 #include "agl/behaviours/key.h"
 #include "agl/behaviours/cache.h"
 #include "agl/text/text_input.h"
-#include "samplecat.h"
 #include "application.h"
 #include "behaviours/state.h"
 #include "views/panel.h"

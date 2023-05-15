@@ -27,7 +27,6 @@
 #include "debug/debug.h"
 #include "file_manager/mimetype.h"
 
-#include "typedefs.h"
 #include "support.h"
 #include "dh_tree.h"
 

@@ -18,7 +18,7 @@
 #include "agl/event.h"
 #include "agl/text/pango.h"
 #include "agl/behaviours/cache.h"
-#include "samplecat.h"
+#include "samplecat/model.h"
 #include "shader.h"
 #include "behaviours/panel.h"
 #include "views/filters.h"

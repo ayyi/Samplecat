@@ -17,7 +17,7 @@
 #include "file_manager/support.h" // to_utf8()
 #include "agl/behaviours/scrollable.h"
 #include "agl/fbo.h"
-#include "samplecat.h"
+#include "samplecat/support.h"
 #include "application.h"
 #include "views/inspector.h"
 

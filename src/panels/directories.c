@@ -16,7 +16,6 @@
 #include "debug/debug.h"
 #include "dh_link.h"
 #include "dh_tree.h"
-#include "typedefs.h"
 #include "support.h"
 #include "application.h"
 #include "model.h"

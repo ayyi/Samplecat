@@ -27,20 +27,21 @@ typedef struct {
     void    (*play_all)   ();
     void    (*stop)       ();
 /* extended API */
-    int     (*playpause)  (int);
+    int     (*pause)      (int);
     void    (*seek)       (double);
     guint   (*position)   ();
 } Auditioner;
 
-typedef enum {
-   PLAY_STOPPED = 0,
-   PLAY_PAUSED,
-   PLAY_PLAY_PENDING,
-   PLAY_PLAYING
-} PlayStatus;
-
-
 G_BEGIN_DECLS
+
+typedef enum {
+   PLAYER_INIT = 0,
+   PLAYER_STOPPED,
+   PLAYER_PAUSED,
+   PLAYER_PLAY_PENDING,
+   PLAYER_PLAYING
+} PlayerState;
+
 
 #define TYPE_PLAYER            (player_get_type ())
 #define PLAYER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_PLAYER, Player))
@@ -64,7 +65,7 @@ typedef struct {
 
     AMPromise*   ready;
 
-    PlayStatus   status;
+    PlayerState  state;
     Sample*      sample;
     GList*       queue;
     guint        position;
@@ -90,14 +91,20 @@ typedef struct {
 GType   player_get_type             () G_GNUC_CONST;
 Player* player_new                  ();
 void    player_connect              (ErrorCallback, gpointer);
+void    player_set_state            (PlayerState);
 bool    player_play                 (Sample*);
 void    player_stop                 ();
+void    player_pause                ();
 void    player_set_position         (gint64);
 void    player_set_position_seconds (float);
 void    player_on_play_finished     ();
 
 bool    player_is_stopped           ();
 bool    player_is_playing           ();
+
+#define PLAYER_TYPE_STATE (player_state_get_type ())
+
+GType   player_state_get_type       ();
 
 G_END_DECLS
 

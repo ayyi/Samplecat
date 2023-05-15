@@ -8,8 +8,6 @@ button {
 paned > separator {
 	margin-left: 10px;
 	margin-right: 10px;
-	min-width: 10px;
-	background-color: #696;
 }
 
 /* dock-grip label */
@@ -44,4 +42,8 @@ dock-grip > button.flat {
 
 grid {
 	margin: 5px;
+}
+
+popover > * {
+	border-radius: 2px;
 }

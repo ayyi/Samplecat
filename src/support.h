@@ -14,8 +14,6 @@
 
 #include <stdint.h>
 #include <gtk/gtk.h>
-#include "src/typedefs.h"
-#include "utils/ayyi_utils.h"
 #include "file_manager/mimetype.h"
 #include "samplecat/support.h"
 

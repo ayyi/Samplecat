@@ -19,7 +19,7 @@
 #include "agl/actor.h"
 #include "agl/fbo.h"
 #include "agl/event.h"
-#include "samplecat.h"
+#include "sample.h"
 #include "audio_analysis/spectrogram/spectrogram.h"
 #include "views/spectrogram.h"
 

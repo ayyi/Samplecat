@@ -856,7 +856,6 @@ gdl_dock_layout_load_from_string (GdlDockLayout *layout, const gchar *str)
 gboolean
 gdl_dock_layout_save_to_file (GdlDockLayout *layout, const gchar *filename)
 {
-    FILE     *file_handle;
     int       bytes;
     gboolean  retval = FALSE;
 
@@ -867,7 +866,7 @@ gdl_dock_layout_save_to_file (GdlDockLayout *layout, const gchar *filename)
     if (!layout->priv->doc)
         gdl_dock_layout_build_doc (layout);
 
-    file_handle = fopen (filename, "w");
+    FILE* file_handle = fopen (filename, "w");
     if (file_handle) {
         bytes = xmlDocFormatDump (file_handle, layout->priv->doc, 1);
         if (bytes >= 0) {
@@ -997,7 +996,7 @@ gdl_dock_layout_setup_object2 (GdlDockMaster* master, Stack* stack, gint *n_afte
 		object = g_object_newv (G_TYPE_FROM_CLASS(constructor->object_class), constructor->n_params, (GParameter*)constructor->params);
 #pragma GCC diagnostic warning "-Wdeprecated-declarations"
 
-		if (GDL_IS_DOCK_ITEM(object) && name)
+		if (GDL_IS_DOCK_ITEM(object) && !gdl_dock_object_is_compound(object))
 			stack->added[stack->added_sp++] = (GdlDockItem*)object;
 
 		/*
@@ -1157,7 +1156,7 @@ dock_handler (yaml_parser_t* parser, const yaml_event_t* event, const char* name
 
 			GdlDockObject* controller = gdl_dock_master_get_controller (stack->master);
 			if (controller != object && gtk_widget_get_visible (GTK_WIDGET (controller)))
-				gtk_widget_show (GTK_WIDGET (object));
+				gtk_widget_set_visible (GTK_WIDGET (object), true);
 
 			if (stack->sp == 1) {
 				void add (gpointer top, gpointer object)

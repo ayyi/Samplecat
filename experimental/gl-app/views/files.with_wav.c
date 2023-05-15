@@ -26,7 +26,6 @@
 #include "icon/utils.h"
 #include "file_manager/file_manager.h"
 #include "file_manager/pixmaps.h"
-#include "samplecat.h"
 #include "application.h"
 #include "views/files.impl.h"
 #include "views/files.with_wav.h"

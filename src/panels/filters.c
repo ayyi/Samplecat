@@ -30,23 +30,16 @@ filters_new ()
 		Observable* filter = samplecat.model->filters3[i];
 		dbg(2, "  %s", filter->value.c);
 
-		char* text = label_text(filter);
-		GtkWidget* button = gtk_button_new_with_label(text);
-		g_free(text);
+		g_autofree char* text = label_text(filter);
+		GtkWidget* button = gtk_button_new();
 		gtk_box_append(GTK_BOX(hbox), button);
-#ifdef GTK4_TODO
-		gtk_button_set_alignment ((GtkButton*)button, 0.0, 0.5);
-		gtk_widget_set_no_show_all(button, !(filter->value.c && strlen(filter->value.c)));
-#endif
-
-#ifdef GTK4_TODO
-		GtkWidget* icon = gtk_image_new_from_stock(GTK_STOCK_CLOSE, GTK_ICON_SIZE_MENU);
-		gtk_misc_set_padding((GtkMisc*)icon, 4, 0);
-		gtk_button_set_image(GTK_BUTTON(button), icon);
-#endif
-#ifdef GTK4_TODO
-		gtk_widget_set(button, "image-position", GTK_POS_LEFT, NULL);
-#endif
+		{
+			GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+			gtk_button_set_child(GTK_BUTTON(button), box);
+			gtk_box_append(GTK_BOX(box), gtk_image_new_from_icon_name("window-close-symbolic"));
+			gtk_box_append(GTK_BOX(box), gtk_label_new(text));
+		}
+		gtk_widget_set_visible(button, filter->value.c && strlen(filter->value.c));
 
 		g_hash_table_insert(buttons, filter, button);
 

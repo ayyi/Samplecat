@@ -31,6 +31,8 @@
 #include "worker.h"
 #include "library.h"
 
+static LibraryView* instance;
+
 #define START_EDITING 1
 
 #ifdef GTK4_TODO
@@ -61,6 +63,11 @@ static gboolean     treeview_get_tags_cell            (GtkTreeView*, guint x, gu
 static void         listview__highlight_playing_by_path(GtkTreePath*);
 static void         listview__highlight_playing_by_ref(GtkTreeRowReference*);
 
+static void         listview__edit_row                (GSimpleAction*, GVariant*, gpointer);
+static void         listview__reset_colours           (GSimpleAction*, GVariant*, gpointer);
+static void         listview__update_selected         (GSimpleAction*, GVariant*, gpointer);
+static void         listview__delete_selected         ();
+
 
 /*
  *  The main samplecat pane. A treeview with a list of samples.
@@ -68,7 +75,7 @@ static void         listview__highlight_playing_by_ref(GtkTreeRowReference*);
 GtkWidget*
 listview__new ()
 {
-	LibraryView* lv = ((Application*)app)->libraryview = g_new0(LibraryView, 1);
+	LibraryView* lv = instance = g_new0(LibraryView, 1);
 
 	lv->scroll = scrolled_window_new();
 
@@ -238,6 +245,27 @@ listview__new ()
 	}
 	g_signal_connect(G_OBJECT(app), "search-starting", G_CALLBACK(list_view_on_search_start), NULL);
 
+	{
+		GActionEntry entries[] = {
+			{ "edit-row", listview__edit_row, NULL, NULL, NULL },
+			{ "delete-rows", listview__delete_selected, NULL, NULL, NULL },
+			{ "reset-colours", listview__reset_colours, NULL, NULL, NULL },
+			{ "update-rows", listview__update_selected, NULL, NULL, NULL },
+		};
+		GSimpleActionGroup* action_group = g_simple_action_group_new ();
+		g_action_map_add_action_entries (G_ACTION_MAP (action_group), entries, G_N_ELEMENTS (entries), NULL);
+		gtk_widget_insert_action_group (GTK_WIDGET(gtk_application_get_active_window(GTK_APPLICATION(app))), "library", G_ACTION_GROUP (action_group));
+	}
+	{
+		GtkEventController* mnemonic_controller = gtk_shortcut_controller_new ();
+		gtk_event_controller_set_propagation_phase (mnemonic_controller, GTK_PHASE_CAPTURE);
+		gtk_shortcut_controller_set_scope (GTK_SHORTCUT_CONTROLLER (mnemonic_controller), GTK_SHORTCUT_SCOPE_MANAGED);
+		GtkShortcutAction* action = gtk_named_action_new ("library.action-1");
+		GtkShortcut* shortcut = gtk_shortcut_new_with_arguments (gtk_keyval_trigger_new ('h', GDK_CONTROL_MASK), action, NULL);
+		gtk_shortcut_controller_add_shortcut (GTK_SHORTCUT_CONTROLLER (mnemonic_controller), shortcut);
+		gtk_widget_add_controller (lv->scroll, mnemonic_controller);
+	}
+
 	return lv->scroll;
 }
 
@@ -245,12 +273,23 @@ listview__new ()
 static void
 listview__on_realise (GtkWidget* widget, gpointer user_data)
 {
-	LibraryView* lv = ((Application*)app)->libraryview;
+	gtk_tree_view_column_set_resizable(instance->col_name, true);
+	gtk_tree_view_column_set_resizable(instance->col_path, true);
 
-	gtk_tree_view_column_set_resizable(lv->col_name, true);
-	gtk_tree_view_column_set_resizable(lv->col_path, true);
+	listview__on_store_changed(samplecat.store, instance);
+}
 
-	listview__on_store_changed(samplecat.store, lv);
+
+/*
+ *  Free the returned list with g_list_free
+ */
+GList*
+listview__get_selection ()
+{
+	if (!instance) return NULL;
+
+	GtkTreeSelection* selection = gtk_tree_view_get_selection((GtkTreeView*)instance);
+	return gtk_tree_selection_get_selected_rows(selection, NULL);
 }
 
 
@@ -298,11 +337,11 @@ listview__on_row_clicked (GtkWidget* widget, GdkEventButton* event, gpointer use
 	switch (event->button) {
 	  case 1:
 		;GtkTreePath* path;
-		if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(app->libraryview->widget), (gint)event->x, (gint)event->y, &path, NULL, NULL, NULL)) {
+		if (gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(instance->widget), (gint)event->x, (gint)event->y, &path, NULL, NULL, NULL)) {
 
 			// auditioning
 			GdkRectangle rect;
-			gtk_tree_view_get_cell_area(treeview, path, app->libraryview->col_pixbuf, &rect);
+			gtk_tree_view_get_cell_area(treeview, path, instance->col_pixbuf, &rect);
 			if (((gint)event->x > rect.x) && ((gint)event->x < (rect.x + rect.width))) {
 
 				// overview column
@@ -319,12 +358,12 @@ listview__on_row_clicked (GtkWidget* widget, GdkEventButton* event, gpointer use
 					sample_unref(sample);
 				}
 			} else {
-				gtk_tree_view_get_cell_area(treeview, path, app->libraryview->col_tags, &rect);
+				gtk_tree_view_get_cell_area(treeview, path, instance->col_tags, &rect);
 
 				if (((gint)event->x > rect.x) && ((gint)event->x < (rect.x + rect.width))) {
 					// tags column
 					GtkTreeIter iter;
-					GtkTreeModel* model = gtk_tree_view_get_model(GTK_TREE_VIEW(app->libraryview->widget));
+					GtkTreeModel* model = gtk_tree_view_get_model(GTK_TREE_VIEW(instance->widget));
 					gtk_tree_model_get_iter(model, &iter, path);
 					gchar* tags;
 					int id;
@@ -344,10 +383,10 @@ listview__on_row_clicked (GtkWidget* widget, GdkEventButton* event, gpointer use
 		dbg (2, "right button press!");
 
 		//if one or no rows selected, select one:
-		GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(app->libraryview->widget));
+		GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(instance->widget));
 		if (gtk_tree_selection_count_selected_rows(selection) <= 1) {
 			GtkTreePath* path;
-			if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(app->libraryview->widget), (gint)event->x, (gint)event->y, &path, NULL, NULL, NULL)){
+			if(gtk_tree_view_get_path_at_pos(GTK_TREE_VIEW(instance->widget), (gint)event->x, (gint)event->y, &path, NULL, NULL, NULL)){
 				gtk_tree_selection_unselect_all(selection);
 				gtk_tree_selection_select_path(selection, path);
 				gtk_tree_path_free(path);
@@ -372,13 +411,12 @@ listview__on_row_clicked (GtkWidget* widget, GdkEventButton* event, gpointer use
 static void
 listview__on_cursor_change (GtkTreeView* widget, gpointer user_data)
 {
-	LibraryView* lv = ((Application*)app)->libraryview;
+	PF2;
 
-	dbg(2, "...");
 	Sample* s;
 	if ((s = listview__get_first_selected_sample())) {
-		if (s->id != lv->selected) {
-			lv->selected = s->id;
+		if (s->id != instance->selected) {
+			instance->selected = s->id;
 			samplecat_model_set_selection (samplecat.model, s);
 		}
 		sample_unref(s);
@@ -415,12 +453,12 @@ listview__on_store_changed (GtkListStore* store, LibraryView* view)
 static gboolean
 listview__get_first_selected_iter(GtkTreeIter* iter)
 {
-	GtkTreeSelection* selection = gtk_tree_view_get_selection((GtkTreeView*)app->libraryview->widget);
+	GtkTreeSelection* selection = gtk_tree_view_get_selection((GtkTreeView*)instance->widget);
 	GList* list                 = gtk_tree_selection_get_selected_rows(selection, NULL);
 	if(list){
 		GtkTreePath* path = list->data;
 
-		GtkTreeModel* model = gtk_tree_view_get_model((GtkTreeView*)app->libraryview->widget);
+		GtkTreeModel* model = gtk_tree_view_get_model((GtkTreeView*)instance->widget);
 		gtk_tree_model_get_iter(model, iter, path);
 
 		g_list_foreach (list, (GFunc)gtk_tree_path_free, NULL);
@@ -433,10 +471,12 @@ listview__get_first_selected_iter(GtkTreeIter* iter)
 #endif
 
 
-void
-listview__reset_colours ()
+																	// TODO why doesn't this apply to the selection?
+static void
+listview__reset_colours (GSimpleAction*, GVariant*, gpointer)
 {
-	gboolean reset_colours (GtkTreeModel* model, GtkTreePath* path, GtkTreeIter* iter, gpointer data) {
+	gboolean reset_colours (GtkTreeModel* model, GtkTreePath* path, GtkTreeIter* iter, gpointer data)
+	{
 		Sample *s = samplecat_list_store_get_sample_by_iter(iter);
 		gtk_list_store_set(samplecat.store, iter, COL_COLOUR, s->colour_index, -1);
 		sample_unref(s);
@@ -448,18 +488,44 @@ listview__reset_colours ()
 }
 
 
+/*
+ *  Sync the selected catalogue row with the filesystem.
+ */
+static void
+listview__update_selected (GSimpleAction*, GVariant*, gpointer)
+{
+	PF;
+
+	g_autoptr(GList) selectionlist = gtk_tree_selection_get_selected_rows(gtk_tree_view_get_selection(GTK_TREE_VIEW(instance->widget)), NULL);
+	if (selectionlist) {
+		dbg(2, "%i rows selected.", g_list_length(selectionlist));
+
+		for (int i=0;i<g_list_length(selectionlist);i++) {
+			g_autoptr(GtkTreePath) treepath = g_list_nth_data(selectionlist, i);
+			Sample* sample = samplecat_list_store_get_sample_by_path(treepath);
+#if 0
+			if (do_progress(0, 0)) break; // TODO: set progress title to "updating"
+#endif
+			samplecat_model_refresh_sample (samplecat.model, sample, true);
+			statusbar_print(1, "online status updated (%s)", sample->online ? "online" : "not online");
+			sample_unref(sample);
+		}
+#if 0
+		hide_progress();
+#endif
+	}
+}
+
+
 static GtkTreePath*
 listview__get_first_selected_path ()
 {
-	LibraryView* lv = ((Application*)app)->libraryview;
-
-	GtkTreeSelection* selection = gtk_tree_view_get_selection((GtkTreeView*)lv->widget);
-	GList* list                 = gtk_tree_selection_get_selected_rows(selection, NULL);
+	GtkTreeSelection* selection = gtk_tree_view_get_selection((GtkTreeView*)instance->widget);
+	g_autoptr(GList) list = gtk_tree_selection_get_selected_rows(selection, NULL);
 	if (list) {
 		GtkTreePath* path = gtk_tree_path_copy(list->data);
 
 		g_list_foreach (list, (GFunc)gtk_tree_path_free, NULL);
-		g_list_free (list);
 
 		return path;
 	}
@@ -483,39 +549,6 @@ listview__get_first_selected_sample ()
 }
 
 
-#if 0
-gchar*
-listview__get_first_selected_filename ()
-{
-	GtkTreeIter iter;
-	if (listview__get_first_selected_iter(&iter)) {
-		gchar* fname;
-		gtk_tree_model_get(gtk_tree_view_get_model((GtkTreeView*)app->libraryview->widget), &iter, COL_NAME, &fname, -1);
-		return fname;
-	}
-	return NULL;
-}
-#endif
-
-
-#if 0
-gchar*
-listview__get_first_selected_filepath ()
-{
-	//returned value must be freed
-
-	GtkTreeIter iter;
-	if (listview__get_first_selected_iter(&iter)) {
-		gchar* fname, *path;
-		gtk_tree_model_get(gtk_tree_view_get_model((GtkTreeView*)app->libraryview->widget), &iter, COL_NAME, &fname, COL_FNAME, &path, -1);
-		gchar* filepath = g_build_filename(path, fname, NULL);
-		return filepath;
-	}
-	return NULL;
-}
-#endif
-
-
 /*
  *  Outgoing drop. provide the dropee with info on which samples were dropped.
  */
@@ -524,7 +557,7 @@ static void
 listview__dnd_get (GtkWidget* widget, GdkDragContext* context, GtkSelectionData* selection_data, guint info, guint time, gpointer data)
 {
 	GtkTreeModel* model = GTK_TREE_MODEL(samplecat.store);
-	GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(app->libraryview->widget));
+	GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(instance->widget));
 	GList* selected_rows = gtk_tree_selection_get_selected_rows(selection, &(model));
 
 	GList* list = NULL;
@@ -533,7 +566,7 @@ listview__dnd_get (GtkWidget* widget, GdkDragContext* context, GtkSelectionData*
 	for (; row; row=row->next) {
 		GtkTreePath* treepath_selection = row->data;
 		Sample* s = samplecat_list_store_get_sample_by_path(treepath_selection);
-		//append is slow, but g_list_prepend() is wrong order :(
+		// append is slow, but g_list_prepend() is wrong order :(
 		list = g_list_append(list, g_strdup(s->full_path));
 		sample_unref(s);
 		gtk_tree_path_free(treepath_selection);
@@ -575,7 +608,7 @@ static bool blocked = false;
 void
 listview__block_motion_handler ()
 {
-	LibraryView* view = ((Application*)app)->libraryview;
+	LibraryView* view = instance;
 
 	if (!blocked && view && view->widget) {
 #ifdef GTK4_TODO
@@ -597,7 +630,7 @@ listview__block_motion_handler ()
 static void
 listview__unblock_motion_handler ()
 {
-	LibraryView* view = ((Application*)app)->libraryview;
+	LibraryView* view = instance;
 
 	g_return_if_fail(view && view->widget);
 
@@ -752,14 +785,14 @@ listview__on_motion (GtkWidget* widget, GdkEventMotion* event, gpointer user_dat
 #endif
 
 
-void
-listview__edit_row (GtkWidget* widget, gpointer user_data)
+static void
+listview__edit_row (GSimpleAction* action, GVariant* parameter, gpointer user_data)
 {
 	// currently this only works for the Tags cell.
 
 	PF;
 
-	LibraryView* view = ((Application*)app)->libraryview;
+	LibraryView* view = instance;
 	GtkTreeView* treeview = GTK_TREE_VIEW(view->widget);
 
 	GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
@@ -825,6 +858,57 @@ listview__on_keywords_edited (GtkCellRendererText* cell, gchar* path_string, gch
 
 
 static void
+listview__delete_selected ()
+{
+	GtkTreeModel* model = gtk_tree_view_get_model(GTK_TREE_VIEW(instance->widget));
+
+	GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(instance->widget));
+	g_autoptr(GList) selectionlist = gtk_tree_selection_get_selected_rows(selection, &(model));
+	if (!selectionlist) { perr("no files selected?\n"); return; }
+	dbg(1, "%i rows selected.", g_list_length(selectionlist));
+
+	statusbar_print(1, "deleting %i files...", g_list_length(selectionlist));
+
+	GList* selected_row_refs = NULL;
+
+	// get row refs for each selected row before the list is modified
+	GList* l = selectionlist;
+	for (;l;l=l->next) {
+		GtkTreePath* treepath_selection = l->data;
+
+		GtkTreeRowReference* row_ref = gtk_tree_row_reference_new(GTK_TREE_MODEL(samplecat.store), treepath_selection);
+		selected_row_refs = g_list_prepend(selected_row_refs, row_ref);
+	}
+
+	int n = 0;
+	GtkTreePath* path;
+	GtkTreeIter iter;
+	l = selected_row_refs;
+	for (;l;l=l->next) {
+		GtkTreeRowReference* row_ref = l->data;
+		if ((path = gtk_tree_row_reference_get_path(row_ref))) {
+
+			if (gtk_tree_model_get_iter(model, &iter, path)) {
+				gchar* fname;
+				int id;
+				gtk_tree_model_get(model, &iter, COL_NAME, &fname, COL_IDX, &id, -1);
+
+				if (!samplecat_model_remove(samplecat.model, id)) return;
+
+				gtk_list_store_remove(samplecat.store, &iter);
+				n++;
+
+			} else perr("bad iter!\n");
+			gtk_tree_path_free(path);
+		} else perr("cannot get path from row_ref!\n");
+	}
+	g_list_free(selected_row_refs); //FIXME free the row_refs?
+
+	statusbar_print(1, "%i files deleted", n);
+}
+
+
+static void
 listview__path_cell_data (GtkTreeViewColumn* tree_column, GtkCellRenderer* cell, GtkTreeModel* tree_model, GtkTreeIter* iter, gpointer data)
 {
 	g_return_if_fail (cell);
@@ -855,7 +939,7 @@ listview__tag_cell_data (GtkTreeViewColumn* tree_column, GtkCellRenderer* cell, 
 			!!!!cell_area.background_area <----try this.
 	*/
 
-	LibraryView* view = ((Application*)app)->libraryview;
+	LibraryView* view = instance;
 
 	//set background colour:
 	listview__cell_data_bg(tree_column, cell, tree_model, iter, data);
@@ -1096,7 +1180,7 @@ treeview_get_tags_cell (GtkTreeView *view, guint x, guint y, GtkCellRenderer **c
 gint
 listview__get_mouseover_row ()
 {
-	LibraryView* view = ((Application*)app)->libraryview;
+	LibraryView* view = instance;
 
 	gint row_num = -1;
 	GtkTreePath* path;

@@ -1,6 +1,6 @@
 /*
  +----------------------------------------------------------------------+
- | This file is part of Samplecat. http://ayyi.github.io/samplecat/     |
+ | This file is part of Samplecat. https://ayyi.github.io/samplecat/    |
  | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
  +----------------------------------------------------------------------+
  | This program is free software; you can redistribute it and/or modify |
@@ -16,10 +16,9 @@
 
 typedef struct
 {
-	char*     label;
-	GCallback callback;
-	char*     stock_id;
-	int       callback_data;
+	const char* name;
+	const char* action;
+	const char* icon;
 } MenuDef;
 
 GtkWidget* make_menu                (int size, MenuDef[size], gpointer);

@@ -92,7 +92,7 @@ get_icon_texture_by_name (const char* name, int size)
 		return t;
 	}
 
-	GIcon* icon_name = g_content_type_get_icon (name);
+	g_autoptr(GIcon) icon_name = g_content_type_get_icon (name);
 	GtkIconPaintable* paintable = gtk_icon_theme_lookup_by_gicon(icon_theme, icon_name, size, 1, GTK_TEXT_DIR_NONE, 0);
 	GFile* file = gtk_icon_paintable_get_file (paintable);
 	if (file) {

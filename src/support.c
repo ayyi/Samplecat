@@ -18,7 +18,6 @@
 #include "file_manager/file_manager.h"
 #include "dir_tree/typedefs.h"
 #include "dir_tree/ui_fileops.h"
-#include "typedefs.h"
 #include "src/support.h"
 #include "application.h"
 

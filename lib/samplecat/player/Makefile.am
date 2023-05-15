@@ -30,4 +30,4 @@ libplayer_la_SOURCES = \
 	$(AUDITIONER_GPLAYER)
 
 player.vala.c: player.vala.vala
-	valac-0.36 -C -H player.vala.h player.vala.vala
+	valac-0.56 -C -H player.vala.h player.vala.vala

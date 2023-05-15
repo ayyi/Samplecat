@@ -369,9 +369,9 @@ dock_free (AGlActor* actor)
 {
 	DockHView* dock = (DockHView*)actor;
 
-	g_list_free0(dock->panels);
+	g_clear_pointer(&dock->panels, g_list_free);
 
-	if(!--instance_count){
+	if (!--instance_count) {
 	}
 
 	g_clear_pointer(&dock->animatables[0], g_free);

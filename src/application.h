@@ -94,8 +94,9 @@ void         application_quit                    (Application*);
 void         application_set_ready               ();
 void         application_search                  ();
 
+GList*       application_get_selection           ();
+
 void         application_play                    (Sample*);
-void         application_pause                   ();
 void         application_play_selected           ();
 void         application_play_all                ();
 void         application_play_path               (const char*);

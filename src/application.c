@@ -56,6 +56,12 @@ static void     application_set_auditioner (Application*);
 
 static void     application_play_next      ();
 
+static GActionEntry app_entries[] =
+{
+	{ "play-all", application_play_all, },
+	{ "player-stop", player_stop, },
+};
+
 
 Application*
 application_construct (GType object_type)
@@ -123,7 +129,7 @@ application_activate (GApplication* base)
 
     GtkCssProvider* provider = gtk_css_provider_new ();
     gtk_css_provider_load_from_resource (provider, "/samplecat/resources/style.css");
-	gtk_style_context_add_provider_for_display (gdk_display_get_default(), GTK_STYLE_PROVIDER(provider), 5);
+	gtk_style_context_add_provider_for_display (gdk_display_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
 	pixmaps_init();
 	samplecat.store = (GtkListStore*)samplecat_list_store_new();
@@ -167,6 +173,16 @@ application_instance_init (Application* self)
 	play->next = application_play_next;
 	play->play_selected = application_play_selected;
 
+	g_action_map_add_action_entries (G_ACTION_MAP (self), app_entries, G_N_ELEMENTS (app_entries), self);
+
+	gtk_application_set_accels_for_action (GTK_APPLICATION (self), "app.play", (const char*[]){ "<Ctrl>P", NULL });
+	{
+		GAction* action = g_action_map_lookup_action (G_ACTION_MAP(app), "play-all");
+		if (action) {
+			g_simple_action_set_enabled (G_SIMPLE_ACTION(action), false);
+		}
+	}
+
 	void on_filter_changed (Observable* filter, AGlVal value, gpointer user_data)
 	{
 		application_search();
@@ -192,6 +208,42 @@ application_instance_init (Application* self)
 		statusbar_print(1, PACKAGE_NAME". Version "PACKAGE_VERSION);
 	}
 	g_signal_connect(samplecat.logger, "message", G_CALLBACK(log_message), NULL);
+
+	void on_player_state_change (GObject* o, GParamSpec*, gpointer _)
+	{
+		dbg(1, "---> %s", g_enum_to_string (PLAYER_TYPE_STATE, play->state));
+		statusbar_print(1, "%s", g_enum_to_string (PLAYER_TYPE_STATE, play->state));
+
+		GAction* action = g_action_map_lookup_action (G_ACTION_MAP(app), "player-stop");
+		if (action) {
+			g_simple_action_set_enabled (G_SIMPLE_ACTION(action), play->state != PLAYER_STOPPED);
+		}
+		action = g_action_map_lookup_action (G_ACTION_MAP(app), "play-all");
+		if (action) {
+			g_simple_action_set_enabled (G_SIMPLE_ACTION(action), true);
+		}
+	}
+	g_signal_connect(play, "notify::state", G_CALLBACK(on_player_state_change), NULL);
+
+	void menu_on_audio_ready (gpointer _, gpointer __)
+	{
+#ifdef GTK4_TODO
+		if (play->auditioner->seek) {
+			gtk_widget_show(widgets.loop_playback);
+		}
+#endif
+	}
+	am_promise_add_callback(play->ready, menu_on_audio_ready, NULL);
+
+#ifdef DEBUG
+	char** actions = gtk_application_list_action_descriptions (GTK_APPLICATION(self));
+	if (!actions) dbg(0, "no actions found with accelerators");
+	char* action;
+	for (int i=0;(action = actions[i]);i++) {
+		printf("  * %s", action);
+	}
+	g_strfreev(actions);
+#endif
 }
 
 
@@ -397,14 +449,21 @@ application_search ()
 }
 
 
+GList*
+application_get_selection ()
+{
+	return listview__get_selection();
+}
+
+
 void
 application_play (Sample* sample)
 {
-	if (play->status == PLAY_PAUSED) {
-		if (play->auditioner->playpause) {
-			play->auditioner->playpause(false);
+	if (play->state == PLAYER_PAUSED) {
+		if (play->auditioner->pause) {
+			play->auditioner->pause(false);
 		}
-		play->status = PLAY_PLAYING;
+		play->state = PLAYER_PLAYING;
 		return;
 	}
 
@@ -423,17 +482,7 @@ application_play (Sample* sample)
 
 
 void
-application_pause ()
-{
-	if(play->auditioner->playpause){
-		play->auditioner->playpause(true);
-	}
-	play->status = PLAY_PAUSED;
-}
-
-
-void
-application_play_selected()
+application_play_selected ()
 {
 	PF;
 	Sample* sample = samplecat.model->selection;
@@ -461,7 +510,7 @@ application_play_all ()
 		return;
 	}
 
-	gboolean foreach_func(GtkTreeModel* model, GtkTreePath* path, GtkTreeIter* iter, gpointer user_data)
+	gboolean foreach_func (GtkTreeModel* model, GtkTreePath* path, GtkTreeIter* iter, gpointer user_data)
 	{
 		//ADD_TO_QUEUE(samplecat_list_store_get_sample_by_path(path));
 		play->queue = g_list_append(play->queue, samplecat_list_store_get_sample_by_path(path)); // there is a ref already added, so another one is not needed when adding to the queue.

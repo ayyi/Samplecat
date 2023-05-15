@@ -14,7 +14,7 @@
 #include "debug/debug.h"
 #include "agl/utils.h"
 #include "agl/event.h"
-#include "samplecat.h"
+#include "samplecat/support.h"
 #include "utils.h"
 #include "shader.h"
 #include "application.h"

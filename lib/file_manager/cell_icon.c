@@ -244,7 +244,8 @@ cell_icon_get_preferred_width  (GtkCellRenderer* cell, GtkWidget *widget, int *m
 			break;
 	}
 
-	*natural_size = *min_size = w;
+	if (natural_size) *natural_size = w;
+	if (min_size) *min_size = w;
 }
 
 static void

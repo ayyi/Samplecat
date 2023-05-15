@@ -19,7 +19,6 @@
 #include "gdl/gdl-dock-item.h"
 #include "support.h"
 #include "widgets/colour_box.h"
-#include "library.h"
 #include "application.h"
 
 #define TYPE_TAGS            (tags_get_type ())
@@ -63,6 +62,7 @@ tags_class_init (TagsClass * klass, gpointer klass_data)
 	G_OBJECT_CLASS (klass)->constructor = tags_constructor;
 }
 
+
 static GObject *
 tags_constructor (GType type, guint n_construct_properties, GObjectConstructParam* construct_properties)
 {
@@ -71,6 +71,7 @@ tags_constructor (GType type, guint n_construct_properties, GObjectConstructPara
 	g_object_set(obj, "expand", false, NULL);
 	return obj;
 }
+
 
 static void
 tags_instance_init (Tags* self, gpointer klass)
@@ -87,7 +88,7 @@ tags_instance_init (Tags* self, gpointer klass)
 	panel.category = tag_selector_new();
 
 
-	gtk_box_append(GTK_BOX(vbox), panel.hbox1);                // TODO FILL_TRUE
+	gtk_box_append(GTK_BOX(vbox), panel.hbox1);
 	gtk_box_append(GTK_BOX(vbox), panel.hbox2);
 }
 
@@ -103,8 +104,7 @@ on_category_set_clicked (GtkComboBox* widget, gpointer user_data)
 	// get the selected category
 	gchar* category = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(panel.category));
 
-	GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(((Application*)app)->libraryview->widget));
-	GList* selectionlist = gtk_tree_selection_get_selected_rows(selection, NULL);
+	GList* selectionlist = application_get_selection();
 	if (!selectionlist) { statusbar_print(1, "no files selected."); return; }
 
 	GtkTreeIter iter;

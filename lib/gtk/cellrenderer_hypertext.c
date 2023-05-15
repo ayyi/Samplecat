@@ -252,7 +252,7 @@ gtk_cell_renderer_hypertext_snapshot (GtkCellRenderer* cell, GtkSnapshot *snapsh
                                                  //               state = GTK_STATE_NORMAL;
 
 			/*
-        gint row_num = treecell_get_row(app->libraryview->widget, cell_area);
+        gint row_num = treecell_get_row(app->library->widget, cell_area);
 		if ( row_num != prev_row_num ) {
 			//printf("gtk_cell_renderer_hypertext_render() new row (%i)! cell=%p %s\n", row_num, celltext->text, celltext->text);
 

@@ -139,10 +139,10 @@ struct _GdlDockRequest {
 
 struct _GdlDockObject {
     GtkWidget           container;
+    GObject            *master;
 #ifndef GDL_DISABLE_DEPRECATED
     /* Just for compiling, these data are not initialized anymore */
     GdlDockObjectFlags  deprecated_flags;
-    GObject            *deprecated_master;
 #endif
     /*< private >*/
     GdlDockObjectPrivate  *priv;

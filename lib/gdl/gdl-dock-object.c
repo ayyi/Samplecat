@@ -115,7 +115,6 @@ struct _GdlDockObjectPrivate {
     guint               attached : 1;
     gint                freeze_count;
 
-    GObject            *master;
     gchar              *name;
     gchar              *long_name;
     gchar              *stock_id;
@@ -334,7 +333,6 @@ gdl_dock_object_init (GdlDockObject *object)
     object->priv->freeze_count = 0;
 #ifndef GDL_DISABLE_DEPRECATED
     object->deprecated_flags = 0;
-    object->deprecated_master = NULL;
 #endif
 }
 
@@ -387,7 +385,7 @@ gdl_dock_object_get_property  (GObject *g_object, guint prop_id, GValue *value, 
 			g_value_set_pointer (value, object->priv->pixbuf_icon);
 			break;
 		case PROP_MASTER:
-			g_value_set_object (value, object->priv->master);
+			g_value_set_object (value, object->master);
 			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -433,7 +431,7 @@ gdl_dock_object_destroy (GObject* g_object)
     gdl_dock_object_detach (object, FALSE);
 
     /* finally unbind us */
-    if (object->priv->master)
+    if (object->master)
         gdl_dock_object_unbind (object);
 
     G_OBJECT_CLASS(gdl_dock_object_parent_class)->dispose (g_object);
@@ -909,16 +907,16 @@ gdl_dock_object_dock (GdlDockObject *object, GdlDockObject *requestor, GdlDockPl
     if (object == requestor)
         return;
 
-    if (!object->priv->master)
+    if (!object->master)
 																									{
         g_warning (_("Dock operation requested in a non-bound object %p. The application might crash"), object);
 																									}
 	ENTER;
 
     if (!gdl_dock_object_is_bound (requestor))
-        gdl_dock_object_bind (requestor, object->priv->master);
+        gdl_dock_object_bind (requestor, object->master);
 
-    if (requestor->priv->master != object->priv->master) {
+    if (requestor->master != object->master) {
         g_warning (_("Cannot dock %p to %p because they belong to different masters"), requestor, object);
         return;
     }
@@ -979,21 +977,18 @@ gdl_dock_object_bind (GdlDockObject *object, GObject *master)
     g_return_if_fail (object != NULL && master != NULL);
     g_return_if_fail (GDL_IS_DOCK_MASTER (master));
 
-    if (object->priv->master == master)
+    if (object->master == master)
         /* nothing to do here */
         return;
 
-    if (object->priv->master) {
-        g_warning (_("Attempt to bind to %p an already bound dock object %p (current master: %p)"), master, object, object->priv->master);
+    if (object->master) {
+        g_warning (_("Attempt to bind to %p an already bound dock object %p (current master: %p)"), master, object, object->master);
         return;
     }
 
     gdl_dock_master_add (GDL_DOCK_MASTER (master), object);
-    object->priv->master = master;
-#ifndef GDL_DISABLE_DEPRECATED
-    object->deprecated_master = master;
-#endif
-    g_object_add_weak_pointer (master, (gpointer *) &object->priv->master);
+    object->master = master;
+    g_object_add_weak_pointer (master, (gpointer *) &object->master);
 
     g_object_notify (G_OBJECT (object), "master");
 }
@@ -1014,13 +1009,10 @@ gdl_dock_object_unbind (GdlDockObject *object)
     /* detach the object first */
     gdl_dock_object_detach (object, TRUE);
 
-    if (object->priv->master) {
-        GObject *master = object->priv->master;
-        g_object_remove_weak_pointer (master, (gpointer *) &object->priv->master);
-        object->priv->master = NULL;
-#ifndef GDL_DISABLE_DEPRECATED
-        object->deprecated_master = NULL;
-#endif
+    if (object->master) {
+        GObject *master = object->master;
+        g_object_remove_weak_pointer (master, (gpointer *) &object->master);
+        object->master = NULL;
         gdl_dock_master_remove (GDL_DOCK_MASTER (master), object);
         g_object_notify (G_OBJECT (object), "master");
     }
@@ -1039,7 +1031,7 @@ gboolean
 gdl_dock_object_is_bound (GdlDockObject *object)
 {
     g_return_val_if_fail (object != NULL, FALSE);
-    return (object->priv->master != NULL);
+    return (object->master != NULL);
 }
 
 /**
@@ -1057,7 +1049,7 @@ gdl_dock_object_get_master (GdlDockObject *object)
 {
     g_return_val_if_fail (GDL_IS_DOCK_OBJECT (object), NULL);
 
-    return object->priv->master;
+    return object->master;
 }
 
 /**
@@ -1075,7 +1067,7 @@ gdl_dock_object_get_controller (GdlDockObject *object)
 {
     g_return_val_if_fail (GDL_IS_DOCK_OBJECT (object), NULL);
 
-    return gdl_dock_master_get_controller (GDL_DOCK_MASTER (object->priv->master));
+    return gdl_dock_master_get_controller (GDL_DOCK_MASTER (object->master));
 }
 
 /**
@@ -1090,8 +1082,8 @@ gdl_dock_object_get_controller (GdlDockObject *object)
 void
 gdl_dock_object_layout_changed_notify (GdlDockObject *object)
 {
-    if (object->priv->master)
-        g_signal_emit_by_name (object->priv->master, "layout-changed");
+    if (object->master)
+        g_signal_emit_by_name (object->master, "layout-changed");
 }
 
 

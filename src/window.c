@@ -72,10 +72,6 @@ extern void on_quit              (GtkMenuItem*, gpointer);
 typedef GtkWidget* (NewPanelFn)();
 typedef void       (ShowPanelFn)(bool);
 
-#ifdef HAVE_FFTW3
-//static NewPanelFn spectrogram_new;
-#endif
-
 extern NewPanelFn dir_panel_new, spectrogram_area_new,
 	fileview_new,
 #ifdef USE_OPENGL
@@ -97,8 +93,10 @@ typedef struct {
    GtkWidget*     widget;
    GtkWidget*     dock_item;
 
-   GtkWidget*     menu_item;
-   gulong         handler;
+   struct {
+      GAction*    action;
+      GMenuItem*  item;
+   }              menu;
 } Panel;
 
 Panel panels[] = {
@@ -145,11 +143,9 @@ static void       window_on_size_request          (GtkWidget*, GtkRequisition*, 
 static void       window_on_allocate              (GtkWidget*, GtkAllocation*, gpointer);
 #endif
 static gboolean   window_on_configure             (GtkWidget*, gpointer);
-#ifdef GTK4_TODO
-static void       delete_selected_rows            ();
-#endif
 
 static Panel*    panel_lookup_by_name            (const char*);
+static Panel*    panel_lookup_by_gtype           (GType);
 
 #include "menu.c"
 
@@ -258,7 +254,8 @@ window_new (GtkApplication* gtk, gpointer user_data)
 	{
 		dbg(1, "%s %s", G_OBJECT_CLASS_NAME(G_OBJECT_GET_CLASS(object)), gdl_dock_object_get_name(object));
 
-		Panel* panel = panel_lookup_by_name(gdl_dock_object_get_name(object));
+		const char* name = gdl_dock_object_get_name(object);
+		Panel* panel = name ? panel_lookup_by_name(name) : panel_lookup_by_gtype(G_OBJECT_TYPE(object));
 		g_return_if_fail(panel);
 		g_return_if_fail(!panel->dock_item);
 
@@ -378,25 +375,16 @@ window_new (GtkApplication* gtk, gpointer user_data)
 
 	window_on_layout_changed();
 
-#ifdef GTK4_TODO
-	bool window_on_clicked (GtkWidget* widget, GdkEventButton* event, gpointer user_data)
+	void click_gesture_pressed (GtkGestureClick *gesture, int n_press, double widget_x, double widget_y, gpointer)
 	{
-		if (event->button == 3) {
-			if (app->context_menu) {
-				gtk_menu_popup(GTK_MENU(app->context_menu), NULL, NULL, NULL, NULL, event->button, event->time);
-				return HANDLED;
-			}
+		if (((Application*)app)->context_menu) {
+			gtk_popover_popup(GTK_POPOVER(((Application*)app)->context_menu));
 		}
-		return NOT_HANDLED;
 	}
-	g_signal_connect((gpointer)app->window, "button-press-event", G_CALLBACK(window_on_clicked), NULL);
-#else
 	GtkGesture* click = gtk_gesture_click_new ();
-	//g_signal_connect (item->priv->click, "pressed", G_CALLBACK (gdl_dock_item_click_gesture_pressed), item);
-	//g_signal_connect (item->priv->click, "released", G_CALLBACK (gdl_dock_item_click_gesture_released), item);
+	g_signal_connect (click, "pressed", G_CALLBACK (click_gesture_pressed), NULL);
 	gtk_gesture_single_set_button (GTK_GESTURE_SINGLE (click), 3);
 	gtk_widget_add_controller (GTK_WIDGET (win), GTK_EVENT_CONTROLLER (click));
-#endif
 
 	void on_worker_progress (gpointer _n)
 	{
@@ -617,60 +605,6 @@ message_panel__add_msg (const gchar* msg, const gchar* stock_id)
 
 #ifdef GTK4_TODO
 static void
-delete_selected_rows ()
-{
-	GtkTreeModel* model = gtk_tree_view_get_model(GTK_TREE_VIEW(app->libraryview->widget));
-
-	GtkTreeSelection* selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(app->libraryview->widget));
-	GList* selectionlist = gtk_tree_selection_get_selected_rows(selection, &(model));
-	if (!selectionlist) { perr("no files selected?\n"); return; }
-	dbg(1, "%i rows selected.", g_list_length(selectionlist));
-
-	statusbar_print(1, "deleting %i files...", g_list_length(selectionlist));
-
-	GList* selected_row_refs = NULL;
-
-	//get row refs for each selected row before the list is modified:
-	GList* l = selectionlist;
-	for (;l;l=l->next) {
-		GtkTreePath* treepath_selection = l->data;
-
-		GtkTreeRowReference* row_ref = gtk_tree_row_reference_new(GTK_TREE_MODEL(samplecat.store), treepath_selection);
-		selected_row_refs = g_list_prepend(selected_row_refs, row_ref);
-	}
-	g_list_free(selectionlist);
-
-	int n = 0;
-	GtkTreePath* path;
-	GtkTreeIter iter;
-	l = selected_row_refs;
-	for (;l;l=l->next) {
-		GtkTreeRowReference* row_ref = l->data;
-		if ((path = gtk_tree_row_reference_get_path(row_ref))) {
-
-			if (gtk_tree_model_get_iter(model, &iter, path)) {
-				gchar* fname;
-				int id;
-				gtk_tree_model_get(model, &iter, COL_NAME, &fname, COL_IDX, &id, -1);
-
-				if (!samplecat_model_remove(samplecat.model, id)) return;
-
-				gtk_list_store_remove(samplecat.store, &iter);
-				n++;
-
-			} else perr("bad iter!\n");
-			gtk_tree_path_free(path);
-		} else perr("cannot get path from row_ref!\n");
-	}
-	g_list_free(selected_row_refs); //FIXME free the row_refs?
-
-	statusbar_print(1, "%i files deleted", n);
-}
-#endif
-
-
-#ifdef GTK4_TODO
-static void
 make_menu_actions (Accel keys[], int count, void (*add_to_menu)(GtkAction*))
 {
 	// take the raw definitions and create actions and (optionally) menu items for them.
@@ -785,7 +719,7 @@ window_on_layout_changed ()
 static void
 k_delete_row (GtkAccelGroup* _, gpointer user_data)
 {
-	delete_selected_rows();
+	listview__delete_selected();
 }
 #endif
 
@@ -912,6 +846,19 @@ panel_lookup_by_name (const char* name)
 	for (int i=0;i<PANEL_TYPE_MAX;i++) {
 		Panel* panel = &panels[i];
 		if (!strcmp(panel->name, name)) {
+			return panel;
+		}
+	}
+	return NULL;
+}
+
+
+static Panel*
+panel_lookup_by_gtype (GType type)
+{
+	for (int i=0;i<PANEL_TYPE_MAX;i++) {
+		Panel* panel = &panels[i];
+		if (panel->gtype == type) {
 			return panel;
 		}
 	}
