@@ -66,17 +66,20 @@ on_really_connected (char* status, int len, GError* error, gpointer user_data)
 
 	if (!error) {
 		dbus_g_proxy_add_signal(dbus->proxy, "PlaybackStopped", G_TYPE_INVALID);
-		dbus_g_proxy_add_signal(dbus->proxy, "Position", G_TYPE_INT, G_TYPE_DOUBLE, G_TYPE_INVALID);
+		dbus_g_proxy_add_signal(dbus->proxy, "PlaybackStatus", G_TYPE_INT, G_TYPE_INVALID);
+		dbus_g_proxy_add_signal(dbus->proxy, "Position", G_TYPE_DOUBLE, G_TYPE_DOUBLE, G_TYPE_INVALID);
 
-		void on_stopped (DBusGProxy* proxy, gpointer user_data)
+		void on_status (DBusGProxy* proxy, int status, gpointer user_data)
 		{
-			if (!play->queue) {
+			if (status) {
+				player_on_play();
+			} else {
 				player_on_play_finished();
 			}
 		}
-		dbus_g_proxy_connect_signal (dbus->proxy, "PlaybackStopped", G_CALLBACK(on_stopped), NULL, NULL);
+		dbus_g_proxy_connect_signal (dbus->proxy, "PlaybackStatus", G_CALLBACK(on_status), NULL, NULL);
 
-		void on_position (DBusGProxy* proxy, int position, double seconds, gpointer user_data)
+		void on_position (DBusGProxy* proxy, double seconds, double length, gpointer user_data)
 		{
 			player_set_position_seconds(seconds);
 		}

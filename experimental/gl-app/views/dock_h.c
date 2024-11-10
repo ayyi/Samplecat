@@ -121,10 +121,10 @@ dock_h_view (gpointer _)
 		}
 
 		// if the allocated horizontal size is correct, it should be preserved
-		if(items[G_N_ELEMENTS(items) - 1].actor->region.x2 == agl_actor__width(actor)){
-			dbg(2, "width already correct: %i", agl_actor__width(actor));
+		if (items[G_N_ELEMENTS(items) - 1].actor->region.x2 == agl_actor__width(actor)) {
+			dbg(2, "width already correct: %i", (int)agl_actor__width(actor));
 
-			for(GList* l=actor->children;l;l=l->next){
+			for (GList* l=actor->children;l;l=l->next) {
 				AGlActor* child = l->data;
 				child->region.y2 = height;
 				agl_actor__set_size(child);
@@ -258,7 +258,7 @@ dock_h_view (gpointer _)
 			};
 			x += items[i].width + SPACING;
 		}
-		dbg(2, "-> total=%i / %i", x - SPACING, agl_actor__width(actor));
+		dbg(2, "-> total=%i / %i", x - SPACING, (int)agl_actor__width(actor));
 
 		// copynpaste - PanelView set_size
 		// single child takes all space of panel
@@ -420,7 +420,7 @@ dock_h_move_panel_to_y (DockHView* dock, AGlActor* panel, int y)
 		int i = 0;
 		for(;l;l=l->next){
 			AGlActor* a = l->data;
-			dbg(0, "  %i", a->region.y1);
+			dbg(0, "  %.0f", a->region.y1);
 			if(a->region.y1 > y) return i;
 			i++;
 		}
