@@ -1,7 +1,7 @@
 /*
  +----------------------------------------------------------------------+
  | This file is part of Samplecat. https://ayyi.github.io/samplecat/    |
- | copyright (C) 2007-2023 Tim Orford <tim@orford.org>                  |
+ | copyright (C) 2007-2024 Tim Orford <tim@orford.org>                  |
  +----------------------------------------------------------------------+
  | This program is free software; you can redistribute it and/or modify |
  | it under the terms of the GNU General Public License version 3       |
@@ -22,7 +22,7 @@
 #include "player/player.h"
 #include "list_store.h"
 #include "behaviours/panel.h"
-#include "views/panel.h"
+#include "views/dock_v.h"
 #include "views/context_menu.h"
 #include "application.h"
 
@@ -82,13 +82,13 @@ application_new ()
 	}
 
 	/*
-	void listmodel__sample_changed(SamplecatModel* m, Sample* sample, int prop, void* val, gpointer _app)
+	void listmodel__sample_changed (SamplecatModel* m, Sample* sample, int prop, void* val, gpointer _app)
 	{
 		samplecat_list_store_on_sample_changed((SamplecatListStore*)samplecat.store, sample, prop, val);
 	}
 	g_signal_connect((gpointer)samplecat.model, "sample-changed", G_CALLBACK(listmodel__sample_changed), app);
 
-	void log_message(GObject* o, char* message, gpointer _)
+	void log_message (GObject* o, char* message, gpointer _)
 	{
 		dbg(1, "---> %s", message);
 		statusbar_print(1, PACKAGE_NAME". Version "PACKAGE_VERSION);
@@ -269,13 +269,14 @@ application_add_panel (AGlActorClass* klass)
 			AGlActor* panel = panel_view_get_class()->new(NULL);
 			panel->region.y2 = height;
 			((PanelView*)panel)->size_req.min = (AGliPt){-1, 24};
+
 			AGlActor* actor = klass->new(NULL);
 			agl_actor__add_child(panel, actor);
 
 			for (GList* l = parent->children; l; l = l->next) {
 				((AGlActor*)l->data)->region.y2 += height;
 			}
-			agl_actor__insert_child(parent, panel, 0);
+			dock_v_add_panel((DockVView*)parent, panel);
 			agl_actor__set_size(parent);
 		}
 	}
